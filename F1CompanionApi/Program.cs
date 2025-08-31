@@ -1,17 +1,16 @@
+using F1CompanionApi.Endpoints;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
-
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-app.MapGet("/", () => "Hello World!");
+app.MapEndpoints()
+.MapOpenApi();
 
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-    app.MapScalarApiReference();
-}
+app.MapScalarApiReference();
 
 app.Run();
