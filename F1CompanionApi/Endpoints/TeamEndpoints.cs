@@ -1,5 +1,8 @@
 using System;
+using F1CompanionApi.Data;
+using F1CompanionApi.Data.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.EntityFrameworkCore;
 
 namespace F1CompanionApi.Endpoints;
 
@@ -16,29 +19,9 @@ public static class TeamEndpoints
         return app;
     }
 
-    private static Team[] GetTeams()
+    private async static Task<IEnumerable<Team>> GetTeams(ApplicationDbContext db)
     {
-        Team[] teams =
-        [
-            new Team
-            {
-                Id = 1,
-                Name = "Team 1",
-            },
-            new Team
-            {
-                Id = 2,
-                Name = "Team 2",
-            }
-        ];
-
+        var teams = await db.Teams.ToListAsync();
         return teams;
-
     }
-}
-
-internal class Team
-{
-    public int Id { get; set; }
-    public string? Name { get; set; }
 }
