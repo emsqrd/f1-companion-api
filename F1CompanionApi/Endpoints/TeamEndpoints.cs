@@ -21,6 +21,8 @@ public static class TeamEndpoints
             .WithOpenApi()
             .WithDescription("Get Team By Id");
 
+        //TODO: Add new endpoint for leaderboard that orders teams by TotalPoints and assigns Rank on the fly
+
         return app;
     }
 
