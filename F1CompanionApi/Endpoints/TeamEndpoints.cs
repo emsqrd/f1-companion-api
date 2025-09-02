@@ -16,6 +16,13 @@ public static class TeamEndpoints
             .WithOpenApi()
             .WithDescription("Gets all teams");
 
+        app.MapGet("/teams/{id}", GetTeamByIdAsync)
+            .WithName("GetTeamById")
+            .WithOpenApi()
+            .WithDescription("Get Team By Id");
+
+        //TODO: Add new endpoint for leaderboard that orders teams by TotalPoints and assigns Rank on the fly
+
         return app;
     }
 
@@ -23,5 +30,11 @@ public static class TeamEndpoints
     {
         var teams = await db.Teams.ToListAsync();
         return teams;
+    }
+
+    private async static Task<Team> GetTeamByIdAsync(int id, ApplicationDbContext db)
+    {
+        var team = await db.Teams.Where(team => team.Id == id).FirstOrDefaultAsync();
+        return team;
     }
 }

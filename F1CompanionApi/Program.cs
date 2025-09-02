@@ -2,17 +2,18 @@ using F1CompanionApi.Endpoints;
 using F1CompanionApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
+using F1CompanionApi.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Services.AddOpenApi();
 
-// Add Entity Framework Core with PostgreSQL
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.AddApplicationServices();
 
 var app = builder.Build();
+
+app.UseCors("AllowedOrigins");
 
 app.MapEndpoints()
 .MapOpenApi();
