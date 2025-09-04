@@ -1,5 +1,5 @@
-using System;
 using F1CompanionApi.Data;
+using F1CompanionApi.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace F1CompanionApi.Extensions;
@@ -9,7 +9,7 @@ public static class ServiceExtensions
     public static void AddApplicationServices(this IHostApplicationBuilder builder)
     {
         builder.Services.AddEndpointsApiExplorer();
-        // builder.Services.AddServices();
+        builder.Services.AddServices(builder.Configuration);
         builder.Services.AddDbContext(builder.Configuration);
 
         builder.Services.AddCors(options =>
@@ -21,7 +21,8 @@ public static class ServiceExtensions
                 {
                     policy.WithOrigins(allowedOrigins)
                         .AllowAnyHeader()
-                        .AllowAnyMethod();
+                        .AllowAnyMethod()
+                        .AllowCredentials();
                 });
         });
     }
@@ -30,5 +31,11 @@ public static class ServiceExtensions
     {
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
+    }
+
+    private static void AddServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddSingleton<SupabaseAuthService>();
+        services.AddAuthorization();
     }
 }
