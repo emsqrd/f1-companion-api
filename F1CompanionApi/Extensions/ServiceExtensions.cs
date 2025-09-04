@@ -19,7 +19,20 @@ public static class ServiceExtensions
             options.AddPolicy("AllowedOrigins",
                 policy =>
                 {
-                    policy.WithOrigins(allowedOrigins)
+                    policy.SetIsOriginAllowed(origin =>
+                        {
+                            // Check exact matches first
+                            if (allowedOrigins.Contains(origin))
+                                return true;
+
+                            // Check for Netlify preview deployments
+                            if (Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+                            {
+                                return uri.Host.EndsWith(".netlify.app", StringComparison.OrdinalIgnoreCase);
+                            }
+
+                            return false;
+                        })
                         .AllowAnyHeader()
                         .AllowAnyMethod()
                         .AllowCredentials();
