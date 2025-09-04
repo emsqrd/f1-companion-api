@@ -1,8 +1,7 @@
 using F1CompanionApi.Endpoints;
-using F1CompanionApi.Data;
-using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using F1CompanionApi.Extensions;
+using F1CompanionApi.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
@@ -14,6 +13,8 @@ builder.AddApplicationServices();
 var app = builder.Build();
 
 app.UseCors("AllowedOrigins");
+app.UseMiddleware<SupabaseAuthMiddleware>();
+app.UseAuthorization();
 
 app.MapEndpoints()
 .MapOpenApi();
