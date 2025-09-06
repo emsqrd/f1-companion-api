@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace F1CompanionApi.Data.Models;
 
 public class UserProfile
@@ -12,5 +14,6 @@ public class UserProfile
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 
+    [JsonIgnore]
     public Account Account { get; set; } = null!;
 }

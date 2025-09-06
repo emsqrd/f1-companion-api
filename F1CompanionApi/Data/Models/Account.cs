@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace F1CompanionApi.Data.Models;
 
 public class Account
@@ -8,5 +10,6 @@ public class Account
     public bool IsActive { get; set; }
     public DateTime? LastLoginAt { get; set; }
 
+    [JsonIgnore]
     public UserProfile? Profile { get; set; }
 }
