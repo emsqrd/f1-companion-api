@@ -6,7 +6,13 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace F1CompanionApi.Services;
 
-public class SupabaseAuthService
+public interface ISupabaseAuthService
+{
+    ClaimsPrincipal? ValidateToken(string token);
+    string? GetUserId(ClaimsPrincipal principal);
+}
+
+public class SupabaseAuthService : ISupabaseAuthService
 {
     private readonly string _jwtSecret;
     private readonly JwtSecurityTokenHandler _tokenHandler;

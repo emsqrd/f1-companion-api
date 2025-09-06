@@ -9,8 +9,8 @@ public static class MeEndpoints
 {
     public static IEndpointRouteBuilder MapMeEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/me", GetProfile)
-            .WithName("GetMe")
+        app.MapGet("/me/profile", GetUserProfileAsync)
+            .WithName("Get User Profile")
             .WithOpenApi()
             .WithDescription("Gets user profile")
             .RequireAuthorization();
@@ -18,11 +18,17 @@ public static class MeEndpoints
         return app;
     }
 
-    private static IResult GetProfile(HttpContext context, SupabaseAuthService authService)
+    private static async Task<IResult> GetUserProfileAsync(HttpContext context, ISupabaseAuthService authService, IUserProfileService userProfileService)
     {
         var userId = authService.GetUserId(context.User);
-        var email = context.User.FindFirst("email")?.Value;
 
-        return Results.Ok(new { UserId = userId, Email = email });
+        var user = await userProfileService.GetUserProfileByAccountIdAsync(userId!);
+
+        if (user is null)
+        {
+            return Results.NotFound();
+        }
+
+        return Results.Ok(user);
     }
 }
