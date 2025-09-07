@@ -30,6 +30,7 @@ public class ApplicationDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.AccountId).IsUnique();
+            entity.HasIndex(e => e.Email).IsUnique();
             entity.HasOne(e => e.Account)
                     .WithOne(e => e.Profile)
                     .HasForeignKey<UserProfile>(e => e.AccountId)

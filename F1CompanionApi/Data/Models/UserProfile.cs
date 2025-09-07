@@ -14,6 +14,7 @@ public class UserProfile
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 
+    //TODO: Remove this when implementing DTOs
     [JsonIgnore]
     public Account Account { get; set; } = null!;
 }
