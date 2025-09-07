@@ -12,7 +12,6 @@ public interface ISupabaseAuthService
     ClaimsPrincipal? ValidateToken(string token);
     string? GetUserId(ClaimsPrincipal user);
     string? GetUserEmail(ClaimsPrincipal user);
-    IEnumerable<string> GetAllClaims(ClaimsPrincipal user);
 }
 
 public class SupabaseAuthService : ISupabaseAuthService
@@ -61,11 +60,5 @@ public class SupabaseAuthService : ISupabaseAuthService
     {
         return user.FindFirst(ClaimTypes.Email)?.Value ??
             user.FindFirst("email")?.Value;
-    }
-
-    // Add this temporary method for debugging
-    public IEnumerable<string> GetAllClaims(ClaimsPrincipal user)
-    {
-        return user.Claims.Select(c => $"{c.Type}: {c.Value}");
     }
 }
