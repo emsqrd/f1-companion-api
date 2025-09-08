@@ -1,6 +1,6 @@
 using System;
 
-namespace F1CompanionApi.Endpoints;
+namespace F1CompanionApi.Api.Endpoints;
 
 public static class Endpoints
 {

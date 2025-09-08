@@ -1,12 +1,11 @@
 using System.Text;
 using F1CompanionApi.Data;
-using F1CompanionApi.Data.Models;
-using F1CompanionApi.Services;
+using F1CompanionApi.Domain.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
-namespace F1CompanionApi.Extensions;
+namespace F1CompanionApi.Api.Extensions;
 
 public static class ServiceExtensions
 {

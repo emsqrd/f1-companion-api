@@ -3,7 +3,7 @@ using F1CompanionApi.Data;
 using F1CompanionApi.Data.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace F1CompanionApi.Services;
+namespace F1CompanionApi.Domain.Services;
 
 public interface IUserProfileService
 {
@@ -68,4 +68,12 @@ public class UserProfileService : IUserProfileService
             throw;
         }
     }
+
+    // public async Task<UserProfile> UpdateUserProfileAsync(UserProfile userProfile)
+    // {
+    //     var existingUserProfile = await _dbContext.UserProfiles.FirstOrDefaultAsync(x => x.Id == userProfile.Id);
+
+    //     if (existingUserProfile is null)
+    //         throw new Exception("User doesn't exist");
+    // }
 }

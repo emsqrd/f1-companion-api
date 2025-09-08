@@ -3,9 +3,8 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
-using Supabase.Gotrue;
 
-namespace F1CompanionApi.Services;
+namespace F1CompanionApi.Domain.Services;
 
 public interface ISupabaseAuthService
 {

@@ -1,9 +1,7 @@
-using System;
-using F1CompanionApi.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http.HttpResults;
+using F1CompanionApi.Data.Models;
+using F1CompanionApi.Domain.Services;
 
-namespace F1CompanionApi.Endpoints;
+namespace F1CompanionApi.Api.Endpoints;
 
 public static class MeEndpoints
 {
@@ -56,4 +54,9 @@ public static class MeEndpoints
 
         return Results.Created($"/me/profile", userProfile);
     }
+
+    // private static async Task<IResult> UpdateUserProfileAsync(HttpContext httpContext, ISupabaseAuthService, IUserProfileService userProfileService, UserProfile userProfile)
+    // {
+
+    // }
 }
