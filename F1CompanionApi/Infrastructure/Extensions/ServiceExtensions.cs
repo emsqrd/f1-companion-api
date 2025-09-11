@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
-namespace F1CompanionApi.Api.Extensions;
+namespace F1CompanionApi.Infrastructure.Extensions;
 
 public static class ServiceExtensions
 {

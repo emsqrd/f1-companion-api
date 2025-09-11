@@ -1,5 +1,3 @@
-using System;
-
 namespace F1CompanionApi.Api.Endpoints;
 
 public static class Endpoints

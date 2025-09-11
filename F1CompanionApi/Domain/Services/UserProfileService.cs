@@ -1,6 +1,6 @@
-using System;
 using F1CompanionApi.Data;
 using F1CompanionApi.Data.Models;
+using F1CompanionApi.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace F1CompanionApi.Domain.Services;
@@ -9,6 +9,7 @@ public interface IUserProfileService
 {
     Task<UserProfile?> GetUserProfileByAccountIdAsync(string accountId);
     Task<UserProfile> CreateUserProfileAsync(string accountId, string email, string? displayName = null);
+    Task<UserProfile> UpdateUserProfileAsync(UserProfileUpdateModel updateModel);
 }
 
 public class UserProfileService : IUserProfileService
@@ -69,11 +70,32 @@ public class UserProfileService : IUserProfileService
         }
     }
 
-    // public async Task<UserProfile> UpdateUserProfileAsync(UserProfile userProfile)
-    // {
-    //     var existingUserProfile = await _dbContext.UserProfiles.FirstOrDefaultAsync(x => x.Id == userProfile.Id);
+    public async Task<UserProfile> UpdateUserProfileAsync(UserProfileUpdateModel updateModel)
+    {
+        var existingUserProfile = await _dbContext.UserProfiles.FirstOrDefaultAsync(x => x.Id == updateModel.Id);
 
-    //     if (existingUserProfile is null)
-    //         throw new Exception("User doesn't exist");
-    // }
+        if (existingUserProfile is null)
+            throw new Exception("User doesn't exist");
+
+        if (updateModel.DisplayName is not null)
+            existingUserProfile.DisplayName = updateModel.DisplayName;
+
+        if (updateModel.Email is not null)
+            existingUserProfile.Email = updateModel.Email;
+
+        if (updateModel.FirstName is not null)
+            existingUserProfile.FirstName = updateModel.FirstName;
+
+        if (updateModel.LastName is not null)
+            existingUserProfile.LastName = updateModel.LastName;
+
+        if (updateModel.AvatarUrl is not null)
+            existingUserProfile.AvatarUrl = updateModel.AvatarUrl;
+
+        existingUserProfile.UpdatedAt = DateTime.UtcNow;
+
+        await _dbContext.SaveChangesAsync();
+
+        return existingUserProfile;
+    }
 }
