@@ -25,7 +25,7 @@ public static class MeEndpoints
         app.MapPatch("/me/profile", UpdateUserProfileAsync)
             .WithName("Update User Profile")
             .WithOpenApi()
-            .WithDescription("Updates upser profile")
+            .WithDescription("Updates user profile")
             .RequireAuthorization();
 
         return app;
