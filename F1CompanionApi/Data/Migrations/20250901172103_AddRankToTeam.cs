@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace F1CompanionApi.Migrations
+namespace F1CompanionApi.Data.Migrations
 {
     /// <inheritdoc />
     public partial class AddRankToTeam : Migration

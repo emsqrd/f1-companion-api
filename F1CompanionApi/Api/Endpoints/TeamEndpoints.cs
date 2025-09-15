@@ -4,7 +4,7 @@ using F1CompanionApi.Data.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
-namespace F1CompanionApi.Endpoints;
+namespace F1CompanionApi.Api.Endpoints;
 
 public static class TeamEndpoints
 {

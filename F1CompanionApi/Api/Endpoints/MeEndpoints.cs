@@ -1,9 +1,8 @@
-using System;
-using F1CompanionApi.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http.HttpResults;
+using F1CompanionApi.Api.Models;
+using F1CompanionApi.Domain.Models;
+using F1CompanionApi.Domain.Services;
 
-namespace F1CompanionApi.Endpoints;
+namespace F1CompanionApi.Api.Endpoints;
 
 public static class MeEndpoints
 {
@@ -21,6 +20,12 @@ public static class MeEndpoints
             .WithName("Register User")
             .WithOpenApi()
             .WithDescription("Creates user account and profile")
+            .RequireAuthorization();
+
+        app.MapPatch("/me/profile", UpdateUserProfileAsync)
+            .WithName("Update User Profile")
+            .WithOpenApi()
+            .WithDescription("Updates user profile")
             .RequireAuthorization();
 
         return app;
@@ -46,8 +51,8 @@ public static class MeEndpoints
         var userId = authService.GetUserId(httpContext.User);
         var userEmail = authService.GetUserEmail(httpContext.User);
 
-        var existingUser = await userProfileService.GetUserProfileByAccountIdAsync(userId!);
-        if (existingUser != null)
+        var existingProfile = await userProfileService.GetUserProfileByAccountIdAsync(userId!);
+        if (existingProfile != null)
         {
             return Results.Conflict("User already registered");
         }
@@ -55,5 +60,30 @@ public static class MeEndpoints
         var userProfile = await userProfileService.CreateUserProfileAsync(userId!, userEmail!, request.DisplayName);
 
         return Results.Created($"/me/profile", userProfile);
+    }
+
+    private static async Task<IResult> UpdateUserProfileAsync(HttpContext httpContext, ISupabaseAuthService authService, IUserProfileService userProfileService, UpdateUserProfileRequest request)
+    {
+        var userId = authService.GetUserId(httpContext.User);
+
+        var existingProfile = await userProfileService.GetUserProfileByAccountIdAsync(userId!);
+        if (existingProfile is null)
+        {
+            return Results.NotFound("User profile not found");
+        }
+
+        var updateModel = new UserProfileUpdateModel
+        {
+            Id = existingProfile.Id,
+            DisplayName = request.DisplayName,
+            Email = request.Email,
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            AvatarUrl = request.AvatarUrl,
+        };
+
+        var updatedProfile = await userProfileService.UpdateUserProfileAsync(updateModel);
+
+        return Results.Ok(updatedProfile);
     }
 }
