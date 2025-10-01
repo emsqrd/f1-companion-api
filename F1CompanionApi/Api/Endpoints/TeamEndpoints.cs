@@ -1,7 +1,5 @@
-using System;
 using F1CompanionApi.Data;
 using F1CompanionApi.Data.Models;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
 namespace F1CompanionApi.Api.Endpoints;
