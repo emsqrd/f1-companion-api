@@ -8,6 +8,8 @@ namespace F1CompanionApi.Domain.Services;
 public interface ILeagueService
 {
     Task<IEnumerable<League>> GetLeaguesAsync();
+
+    Task<League?> GetLeagueByIdAsync(int id);
 }
 
 public class LeagueService : ILeagueService
@@ -24,5 +26,10 @@ public class LeagueService : ILeagueService
         return await _dbContext.Leagues
             .Include(x => x.Owner)
             .ToListAsync();
+    }
+
+    public async Task<League?> GetLeagueByIdAsync(int id)
+    {
+        return await _dbContext.Leagues.FirstOrDefaultAsync(x => x.Id == id);
     }
 }

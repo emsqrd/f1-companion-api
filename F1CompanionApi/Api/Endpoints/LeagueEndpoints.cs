@@ -13,19 +13,48 @@ public static class LeagueEndpoints
             .WithOpenApi()
             .WithDescription("Gets all leagues");
 
+        app.MapGet("/leagues/{id}", GetLeagueByIdAsync)
+            .WithName("GetLeaguesById")
+            .WithOpenApi()
+            .WithDescription("Get League By Id");
+
         return app;
     }
 
     //TODO: Scope this down to only get leagues for the authenticated user
-    private async static Task<IEnumerable<LeagueResponseModel>> GetLeaguesAsync(ILeagueService leagueService)
+    private async static Task<IResult> GetLeaguesAsync(ILeagueService leagueService)
     {
         var leagues = await leagueService.GetLeaguesAsync();
 
-        return leagues.Select(league => new LeagueResponseModel
+        if (leagues is null)
+        {
+            return Results.NotFound("Leagues not found");
+        }
+
+        var leagueResponses = leagues.Select(league => new LeagueResponseModel
         {
             Id = league.Id,
             Name = league.Name,
         });
 
+        return Results.Ok(leagueResponses);
+    }
+
+    private async static Task<IResult> GetLeagueByIdAsync(ILeagueService leagueService, int id)
+    {
+        var league = await leagueService.GetLeagueByIdAsync(id);
+
+        if (league is null)
+        {
+            return Results.NotFound("League not found");
+        }
+
+        var leagueResponse = new LeagueResponseModel
+        {
+            Id = league.Id,
+            Name = league.Name,
+        };
+
+        return Results.Ok(leagueResponse);
     }
 }
