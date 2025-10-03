@@ -1,4 +1,4 @@
-namespace F1CompanionApi.Data.Models;
+namespace F1CompanionApi.Data.Entities;
 
 public class League
 {
