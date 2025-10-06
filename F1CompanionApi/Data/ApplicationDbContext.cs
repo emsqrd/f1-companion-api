@@ -1,13 +1,12 @@
+using F1CompanionApi.Data.Entities;
 using Microsoft.EntityFrameworkCore;
-using F1CompanionApi.Data.Models;
 
 namespace F1CompanionApi.Data;
 
 public class ApplicationDbContext : DbContext
 {
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
-    {
-    }
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+        : base(options) { }
 
     // Add your DbSets here
     public DbSet<Account> Accounts => Set<Account>();
@@ -15,7 +14,6 @@ public class ApplicationDbContext : DbContext
     public DbSet<League> Leagues => Set<League>();
     public DbSet<Team> Teams => Set<Team>();
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
-
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -30,7 +28,8 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<League>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.HasOne(e => e.Owner)
+            entity
+                .HasOne(e => e.Owner)
                 .WithMany()
                 .HasForeignKey(e => e.OwnerId)
                 .OnDelete(DeleteBehavior.Restrict);
@@ -41,11 +40,11 @@ public class ApplicationDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.AccountId).IsUnique();
             entity.HasIndex(e => e.Email).IsUnique();
-            entity.HasOne(e => e.Account)
-                    .WithOne(e => e.Profile)
-                    .HasForeignKey<UserProfile>(e => e.AccountId)
-                    .OnDelete(DeleteBehavior.Cascade);
+            entity
+                .HasOne(e => e.Account)
+                .WithOne(e => e.Profile)
+                .HasForeignKey<UserProfile>(e => e.AccountId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
-
     }
 }

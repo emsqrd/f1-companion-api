@@ -52,7 +52,7 @@ public static class MeEndpoints
         var userEmail = authService.GetUserEmail(httpContext.User);
 
         var existingProfile = await userProfileService.GetUserProfileByAccountIdAsync(userId!);
-        if (existingProfile != null)
+        if (existingProfile is not null)
         {
             return Results.Conflict("User already registered");
         }

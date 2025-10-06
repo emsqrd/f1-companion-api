@@ -1,12 +1,11 @@
 using F1CompanionApi.Data;
-using F1CompanionApi.Data.Models;
+using F1CompanionApi.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace F1CompanionApi.Api.Endpoints;
 
 public static class TeamEndpoints
 {
-
     public static IEndpointRouteBuilder MapTeamEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapGet("/teams", GetTeams)
@@ -24,13 +23,13 @@ public static class TeamEndpoints
         return app;
     }
 
-    private async static Task<IEnumerable<Team>> GetTeams(ApplicationDbContext db)
+    private static async Task<IEnumerable<Team>> GetTeams(ApplicationDbContext db)
     {
         var teams = await db.Teams.ToListAsync();
         return teams;
     }
 
-    private async static Task<Team> GetTeamByIdAsync(int id, ApplicationDbContext db)
+    private static async Task<Team> GetTeamByIdAsync(int id, ApplicationDbContext db)
     {
         var team = await db.Teams.Where(team => team.Id == id).FirstOrDefaultAsync();
         return team;

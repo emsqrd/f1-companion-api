@@ -3,6 +3,7 @@ using System;
 using F1CompanionApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace F1CompanionApi.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251005234437_AddLeagueProperties")]
+    partial class AddLeagueProperties
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -80,10 +83,10 @@ namespace F1CompanionApi.Data.Migrations
                     b.Property<DateTime>("DateOfBirth")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("DeletedAt")
+                    b.Property<DateTime>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int?>("DeletedBy")
+                    b.Property<int>("DeletedBy")
                         .HasColumnType("integer");
 
                     b.Property<string>("FirstName")
@@ -106,10 +109,10 @@ namespace F1CompanionApi.Data.Migrations
                     b.Property<decimal>("Price")
                         .HasColumnType("numeric");
 
-                    b.Property<DateTime?>("UpdatedAt")
+                    b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int?>("UpdatedBy")
+                    b.Property<int>("UpdatedBy")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
@@ -131,10 +134,10 @@ namespace F1CompanionApi.Data.Migrations
                     b.Property<int>("CreatedBy")
                         .HasColumnType("integer");
 
-                    b.Property<DateTime?>("DeletedAt")
+                    b.Property<DateTime>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int?>("DeletedBy")
+                    b.Property<int>("DeletedBy")
                         .HasColumnType("integer");
 
                     b.Property<bool>("IsDeleted")
@@ -147,10 +150,10 @@ namespace F1CompanionApi.Data.Migrations
                     b.Property<int>("OwnerId")
                         .HasColumnType("integer");
 
-                    b.Property<DateTime?>("UpdatedAt")
+                    b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int?>("UpdatedBy")
+                    b.Property<int>("UpdatedBy")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
@@ -174,10 +177,10 @@ namespace F1CompanionApi.Data.Migrations
                     b.Property<int>("CreatedBy")
                         .HasColumnType("integer");
 
-                    b.Property<DateTime?>("DeletedAt")
+                    b.Property<DateTime>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int?>("DeletedBy")
+                    b.Property<int>("DeletedBy")
                         .HasColumnType("integer");
 
                     b.Property<bool>("IsDeleted")
@@ -197,10 +200,10 @@ namespace F1CompanionApi.Data.Migrations
                     b.Property<int>("TotalPoints")
                         .HasColumnType("integer");
 
-                    b.Property<DateTime?>("UpdatedAt")
+                    b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int?>("UpdatedBy")
+                    b.Property<int>("UpdatedBy")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
@@ -229,10 +232,10 @@ namespace F1CompanionApi.Data.Migrations
                     b.Property<int>("CreatedBy")
                         .HasColumnType("integer");
 
-                    b.Property<DateTime?>("DeletedAt")
+                    b.Property<DateTime>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int?>("DeletedBy")
+                    b.Property<int>("DeletedBy")
                         .HasColumnType("integer");
 
                     b.Property<string>("DisplayName")
@@ -251,10 +254,10 @@ namespace F1CompanionApi.Data.Migrations
                     b.Property<string>("LastName")
                         .HasColumnType("text");
 
-                    b.Property<DateTime?>("UpdatedAt")
+                    b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int?>("UpdatedBy")
+                    b.Property<int>("UpdatedBy")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");

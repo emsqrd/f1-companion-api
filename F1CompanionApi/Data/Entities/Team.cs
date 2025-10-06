@@ -1,8 +1,7 @@
 namespace F1CompanionApi.Data.Entities;
 
-public class Team
+public class Team : BaseEntity
 {
-    public int Id { get; set; }
     public int Rank { get; set; }
     public required string Name { get; set; }
     public required string OwnerName { get; set; }

@@ -1,5 +1,4 @@
 using F1CompanionApi.Api.Models;
-using F1CompanionApi.Data.Models;
 using F1CompanionApi.Domain.Services;
 
 namespace F1CompanionApi.Api.Endpoints;
@@ -40,7 +39,7 @@ public static class LeagueEndpoints
         return Results.Ok(leagueResponses);
     }
 
-    private async static Task<IResult> GetLeagueByIdAsync(ILeagueService leagueService, int id)
+    private static async Task<IResult> GetLeagueByIdAsync(ILeagueService leagueService, int id)
     {
         var league = await leagueService.GetLeagueByIdAsync(id);
 
@@ -49,11 +48,7 @@ public static class LeagueEndpoints
             return Results.NotFound("League not found");
         }
 
-        var leagueResponse = new LeagueResponseModel
-        {
-            Id = league.Id,
-            Name = league.Name,
-        };
+        var leagueResponse = new LeagueResponseModel { Id = league.Id, Name = league.Name };
 
         return Results.Ok(leagueResponse);
     }

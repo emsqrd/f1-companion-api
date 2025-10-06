@@ -1,5 +1,5 @@
 using F1CompanionApi.Data;
-using F1CompanionApi.Data.Models;
+using F1CompanionApi.Data.Entities;
 using F1CompanionApi.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,7 +8,11 @@ namespace F1CompanionApi.Domain.Services;
 public interface IUserProfileService
 {
     Task<UserProfile?> GetUserProfileByAccountIdAsync(string accountId);
-    Task<UserProfile> CreateUserProfileAsync(string accountId, string email, string? displayName = null);
+    Task<UserProfile> CreateUserProfileAsync(
+        string accountId,
+        string email,
+        string? displayName = null
+    );
     Task<UserProfile> UpdateUserProfileAsync(UserProfileUpdateModel updateModel);
 }
 
@@ -23,12 +27,16 @@ public class UserProfileService : IUserProfileService
 
     public async Task<UserProfile?> GetUserProfileByAccountIdAsync(string accountId)
     {
-        return await _dbContext.UserProfiles
-            .Include(x => x.Account)
+        return await _dbContext
+            .UserProfiles.Include(x => x.Account)
             .FirstOrDefaultAsync(x => x.AccountId == accountId);
     }
 
-    public async Task<UserProfile> CreateUserProfileAsync(string accountId, string email, string? displayName = null)
+    public async Task<UserProfile> CreateUserProfileAsync(
+        string accountId,
+        string email,
+        string? displayName = null
+    )
     {
         using var transaction = await _dbContext.Database.BeginTransactionAsync();
 
@@ -72,7 +80,9 @@ public class UserProfileService : IUserProfileService
 
     public async Task<UserProfile> UpdateUserProfileAsync(UserProfileUpdateModel updateModel)
     {
-        var existingUserProfile = await _dbContext.UserProfiles.FirstOrDefaultAsync(x => x.Id == updateModel.Id);
+        var existingUserProfile = await _dbContext.UserProfiles.FirstOrDefaultAsync(x =>
+            x.Id == updateModel.Id
+        );
 
         if (existingUserProfile is null)
             throw new Exception("User doesn't exist");

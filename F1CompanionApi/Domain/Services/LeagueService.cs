@@ -1,6 +1,6 @@
 using System;
 using F1CompanionApi.Data;
-using F1CompanionApi.Data.Models;
+using F1CompanionApi.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace F1CompanionApi.Domain.Services;
@@ -23,9 +23,7 @@ public class LeagueService : ILeagueService
 
     public async Task<IEnumerable<League>> GetLeaguesAsync()
     {
-        return await _dbContext.Leagues
-            .Include(x => x.Owner)
-            .ToListAsync();
+        return await _dbContext.Leagues.Include(x => x.Owner).ToListAsync();
     }
 
     public async Task<League?> GetLeagueByIdAsync(int id)
