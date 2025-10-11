@@ -46,5 +46,36 @@ public class ApplicationDbContext : DbContext
                 .HasForeignKey<UserProfile>(e => e.AccountId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
+
+        // Configure audit trail FK for all entities that inherit from base entity
+        ConfigureAuditTrailForeignKeys<Driver>(modelBuilder);
+        ConfigureAuditTrailForeignKeys<League>(modelBuilder);
+        ConfigureAuditTrailForeignKeys<Team>(modelBuilder);
+        ConfigureAuditTrailForeignKeys<UserProfile>(modelBuilder);
+    }
+
+    private void ConfigureAuditTrailForeignKeys<T>(ModelBuilder modelBuilder)
+        where T : BaseEntity
+    {
+        modelBuilder
+            .Entity<T>()
+            .HasOne(e => e.CreatedByUser)
+            .WithMany()
+            .HasForeignKey(e => e.CreatedBy)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder
+            .Entity<T>()
+            .HasOne(e => e.UpdatedByUser)
+            .WithMany()
+            .HasForeignKey(e => e.UpdatedBy)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder
+            .Entity<T>()
+            .HasOne(e => e.DeletedByUser)
+            .WithMany()
+            .HasForeignKey(e => e.DeletedBy)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

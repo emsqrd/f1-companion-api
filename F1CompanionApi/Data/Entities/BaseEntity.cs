@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace F1CompanionApi.Data.Entities;
 
 public abstract class BaseEntity
@@ -10,4 +12,13 @@ public abstract class BaseEntity
     public DateTime? DeletedAt { get; set; }
     public int? DeletedBy { get; set; }
     public bool IsDeleted { get; set; }
+
+    [JsonIgnore]
+    public UserProfile CreatedByUser { get; set; } = null!;
+
+    [JsonIgnore]
+    public UserProfile? UpdatedByUser { get; set; }
+
+    [JsonIgnore]
+    public UserProfile? DeletedByUser { get; set; }
 }

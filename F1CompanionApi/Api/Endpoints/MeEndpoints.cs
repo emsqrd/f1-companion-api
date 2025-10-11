@@ -31,7 +31,11 @@ public static class MeEndpoints
         return app;
     }
 
-    private static async Task<IResult> GetUserProfileAsync(HttpContext context, ISupabaseAuthService authService, IUserProfileService userProfileService)
+    private static async Task<IResult> GetUserProfileAsync(
+        HttpContext context,
+        ISupabaseAuthService authService,
+        IUserProfileService userProfileService
+    )
     {
         var userId = authService.GetUserId(context.User);
 
@@ -46,23 +50,37 @@ public static class MeEndpoints
         return Results.Ok(user);
     }
 
-    private static async Task<IResult> RegisterUserAsync(HttpContext httpContext, ISupabaseAuthService authService, IUserProfileService userProfileService, RegisterUserRequest request)
+    private static async Task<IResult> RegisterUserAsync(
+        HttpContext httpContext,
+        ISupabaseAuthService authService,
+        IUserProfileService userProfileService,
+        RegisterUserRequest request
+    )
     {
         var userId = authService.GetUserId(httpContext.User);
         var userEmail = authService.GetUserEmail(httpContext.User);
 
-        var existingProfile = await userProfileService.GetUserProfileByAccountIdAsync(userId!);
+        var existingProfile = await userProfileService.GetUserProfileByAccountIdAsync(userId);
         if (existingProfile is not null)
         {
             return Results.Conflict("User already registered");
         }
 
-        var userProfile = await userProfileService.CreateUserProfileAsync(userId!, userEmail!, request.DisplayName);
+        var userProfile = await userProfileService.CreateUserProfileAsync(
+            userId,
+            userEmail,
+            request.DisplayName
+        );
 
         return Results.Created($"/me/profile", userProfile);
     }
 
-    private static async Task<IResult> UpdateUserProfileAsync(HttpContext httpContext, ISupabaseAuthService authService, IUserProfileService userProfileService, UpdateUserProfileRequest request)
+    private static async Task<IResult> UpdateUserProfileAsync(
+        HttpContext httpContext,
+        ISupabaseAuthService authService,
+        IUserProfileService userProfileService,
+        UpdateUserProfileRequest request
+    )
     {
         var userId = authService.GetUserId(httpContext.User);
 
