@@ -2,8 +2,9 @@ using System.Text.Json.Serialization;
 
 namespace F1CompanionApi.Data.Entities;
 
-public class UserProfile : BaseEntity
+public class UserProfile
 {
+    public int Id { get; set; }
     public required string AccountId { get; set; }
     public string? DisplayName { get; set; }
     public required string Email { get; set; }

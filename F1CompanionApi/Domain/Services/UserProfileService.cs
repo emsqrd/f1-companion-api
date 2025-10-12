@@ -42,6 +42,7 @@ public class UserProfileService : IUserProfileService
 
         try
         {
+            // TODO: What do I set account created and updated by to if it's FK to user profile?
             // Create Account
             var account = new Account
             {
@@ -60,8 +61,6 @@ public class UserProfileService : IUserProfileService
                 AccountId = accountId,
                 Email = email,
                 DisplayName = displayName,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow,
             };
 
             _dbContext.UserProfiles.Add(userProfile);
@@ -101,8 +100,6 @@ public class UserProfileService : IUserProfileService
 
         if (updateModel.AvatarUrl is not null)
             existingUserProfile.AvatarUrl = updateModel.AvatarUrl;
-
-        existingUserProfile.UpdatedAt = DateTime.UtcNow;
 
         await _dbContext.SaveChangesAsync();
 

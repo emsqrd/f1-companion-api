@@ -51,7 +51,6 @@ public class ApplicationDbContext : DbContext
         ConfigureAuditTrailForeignKeys<Driver>(modelBuilder);
         ConfigureAuditTrailForeignKeys<League>(modelBuilder);
         ConfigureAuditTrailForeignKeys<Team>(modelBuilder);
-        ConfigureAuditTrailForeignKeys<UserProfile>(modelBuilder);
     }
 
     private void ConfigureAuditTrailForeignKeys<T>(ModelBuilder modelBuilder)
