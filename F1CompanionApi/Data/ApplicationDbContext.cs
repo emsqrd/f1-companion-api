@@ -56,6 +56,7 @@ public class ApplicationDbContext : DbContext
     private void ConfigureAuditTrailForeignKeys<T>(ModelBuilder modelBuilder)
         where T : BaseEntity
     {
+        // Configure foreign key relationships
         modelBuilder
             .Entity<T>()
             .HasOne(e => e.CreatedByUser)
@@ -68,13 +69,15 @@ public class ApplicationDbContext : DbContext
             .HasOne(e => e.UpdatedByUser)
             .WithMany()
             .HasForeignKey(e => e.UpdatedBy)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired(false);
 
         modelBuilder
             .Entity<T>()
             .HasOne(e => e.DeletedByUser)
             .WithMany()
             .HasForeignKey(e => e.DeletedBy)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired(false);
     }
 }

@@ -3,6 +3,7 @@ using System;
 using F1CompanionApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace F1CompanionApi.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251013003634_UpdateLeagueMaxTeamsToBeIntFromBoolean")]
+    partial class UpdateLeagueMaxTeamsToBeIntFromBoolean
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -48,7 +51,7 @@ namespace F1CompanionApi.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Accounts", (string)null);
+                    b.ToTable("Accounts");
                 });
 
             modelBuilder.Entity("F1CompanionApi.Data.Entities.Driver", b =>
@@ -111,7 +114,7 @@ namespace F1CompanionApi.Data.Migrations
 
                     b.HasIndex("UpdatedBy");
 
-                    b.ToTable("Drivers", (string)null);
+                    b.ToTable("Drivers");
                 });
 
             modelBuilder.Entity("F1CompanionApi.Data.Entities.League", b =>
@@ -170,7 +173,7 @@ namespace F1CompanionApi.Data.Migrations
 
                     b.HasIndex("UpdatedBy");
 
-                    b.ToTable("Leagues", (string)null);
+                    b.ToTable("Leagues");
                 });
 
             modelBuilder.Entity("F1CompanionApi.Data.Entities.Team", b =>
@@ -224,7 +227,7 @@ namespace F1CompanionApi.Data.Migrations
 
                     b.HasIndex("UpdatedBy");
 
-                    b.ToTable("Teams", (string)null);
+                    b.ToTable("Teams");
                 });
 
             modelBuilder.Entity("F1CompanionApi.Data.Entities.UserProfile", b =>
@@ -263,7 +266,7 @@ namespace F1CompanionApi.Data.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.ToTable("UserProfiles", (string)null);
+                    b.ToTable("UserProfiles");
                 });
 
             modelBuilder.Entity("F1CompanionApi.Data.Entities.Driver", b =>
