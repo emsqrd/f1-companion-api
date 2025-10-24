@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
-namespace F1CompanionApi.Infrastructure.Extensions;
+namespace F1CompanionApi.Extensions;
 
 public static class ServiceExtensions
 {
@@ -17,12 +17,15 @@ public static class ServiceExtensions
 
         builder.Services.AddCors(options =>
         {
-            var allowedOrigins = builder.Configuration.GetSection("CorsOrigins").Get<string[]>() ?? [];
+            var allowedOrigins =
+                builder.Configuration.GetSection("CorsOrigins").Get<string[]>() ?? [];
 
-            options.AddPolicy("AllowedOrigins",
+            options.AddPolicy(
+                "AllowedOrigins",
                 policy =>
                 {
-                    policy.SetIsOriginAllowed(origin =>
+                    policy
+                        .SetIsOriginAllowed(origin =>
                         {
                             // Check exact matches first
                             if (allowedOrigins.Contains(origin))
@@ -31,7 +34,10 @@ public static class ServiceExtensions
                             // Check for Netlify preview deployments
                             if (Uri.TryCreate(origin, UriKind.Absolute, out var uri))
                             {
-                                return uri.Host.EndsWith(".netlify.app", StringComparison.OrdinalIgnoreCase);
+                                return uri.Host.EndsWith(
+                                    ".netlify.app",
+                                    StringComparison.OrdinalIgnoreCase
+                                );
                             }
 
                             return false;
@@ -39,40 +45,43 @@ public static class ServiceExtensions
                         .AllowAnyHeader()
                         .AllowAnyMethod()
                         .AllowCredentials();
-                });
+                }
+            );
         });
     }
 
     private static void AddDbContext(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
+            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"))
+        );
     }
 
     private static void AddServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddSingleton<ISupabaseAuthService, SupabaseAuthService>();
 
-        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-        .AddJwtBearer(options =>
-        {
-
-            var jwtSecret = configuration["Supabase:JwtSecret"] ??
-                throw new InvalidOperationException("Supabase JWT secret not configured");
-
-            var key = Encoding.UTF8.GetBytes(jwtSecret);
-
-            options.TokenValidationParameters = new TokenValidationParameters
+        services
+            .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
             {
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(key),
-                ValidateIssuer = false,
-                ValidateAudience = true,
-                ValidAudience = "authenticated",
-                ValidateLifetime = true,
-                ClockSkew = TimeSpan.Zero
-            };
-        });
+                var jwtSecret =
+                    configuration["Supabase:JwtSecret"]
+                    ?? throw new InvalidOperationException("Supabase JWT secret not configured");
+
+                var key = Encoding.UTF8.GetBytes(jwtSecret);
+
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateIssuer = false,
+                    ValidateAudience = true,
+                    ValidAudience = "authenticated",
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero,
+                };
+            });
 
         services.AddAuthorization();
         services.AddScoped<ILeagueService, LeagueService>();

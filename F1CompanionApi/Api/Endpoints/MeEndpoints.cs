@@ -1,5 +1,4 @@
 using F1CompanionApi.Api.Models;
-using F1CompanionApi.Domain.Models;
 using F1CompanionApi.Domain.Services;
 
 namespace F1CompanionApi.Api.Endpoints;
@@ -79,7 +78,7 @@ public static class MeEndpoints
         HttpContext httpContext,
         ISupabaseAuthService authService,
         IUserProfileService userProfileService,
-        UpdateUserProfileRequest request
+        UpdateUserProfileRequest updateUserProfileRequest
     )
     {
         var userId = authService.GetUserId(httpContext.User);
@@ -90,17 +89,9 @@ public static class MeEndpoints
             return Results.NotFound("User profile not found");
         }
 
-        var updateModel = new UserProfileUpdateModel
-        {
-            Id = existingProfile.Id,
-            DisplayName = request.DisplayName,
-            Email = request.Email,
-            FirstName = request.FirstName,
-            LastName = request.LastName,
-            AvatarUrl = request.AvatarUrl,
-        };
-
-        var updatedProfile = await userProfileService.UpdateUserProfileAsync(updateModel);
+        var updatedProfile = await userProfileService.UpdateUserProfileAsync(
+            updateUserProfileRequest
+        );
 
         return Results.Ok(updatedProfile);
     }

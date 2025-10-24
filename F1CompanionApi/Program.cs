@@ -1,6 +1,6 @@
 using F1CompanionApi.Api.Endpoints;
 using F1CompanionApi.Data;
-using F1CompanionApi.Infrastructure.Extensions;
+using F1CompanionApi.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 

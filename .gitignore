@@ -54,3 +54,7 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# macOS Specific
+.DS_Store
+**/.DS_Store
