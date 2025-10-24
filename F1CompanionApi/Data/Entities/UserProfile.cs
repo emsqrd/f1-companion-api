@@ -11,6 +11,7 @@ public class UserProfile
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
     public string? AvatarUrl { get; set; }
+    public string FullName => $"{FirstName} {LastName}";
 
     //TODO: Remove this when implementing DTOs
     [JsonIgnore]

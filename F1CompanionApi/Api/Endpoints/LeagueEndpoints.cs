@@ -7,6 +7,11 @@ public static class LeagueEndpoints
 {
     public static IEndpointRouteBuilder MapLeagueEndpoints(this IEndpointRouteBuilder app)
     {
+        app.MapPost("/leagues", CreateLeagueAsync)
+            .WithName("CreateLeague")
+            .WithOpenApi()
+            .WithDescription("Create a new League");
+
         app.MapGet("/leagues", GetLeaguesAsync)
             .WithName("GetLeagues")
             .WithOpenApi()
@@ -18,6 +23,23 @@ public static class LeagueEndpoints
             .WithDescription("Get League By Id");
 
         return app;
+    }
+
+    private static async Task<IResult> CreateLeagueAsync(
+        HttpContext context,
+        ISupabaseAuthService authService,
+        IUserProfileService userProfileService,
+        ILeagueService leagueService,
+        CreateLeagueRequest createLeagueRequest
+    )
+    {
+        var userId = authService.GetUserId(context.User);
+
+        var user = await userProfileService.GetUserProfileByAccountIdAsync(userId);
+
+        var leagueResponse = await leagueService.CreateLeagueAsync(createLeagueRequest, user.Id);
+
+        return Results.Created($"/leagues/{leagueResponse.Id}", leagueResponse);
     }
 
     //TODO: Scope this down to only get leagues for the authenticated user
@@ -34,6 +56,9 @@ public static class LeagueEndpoints
         {
             Id = league.Id,
             Name = league.Name,
+            OwnerName = league.Owner.FullName,
+            MaxTeams = league.MaxTeams,
+            IsPrivate = league.IsPrivate,
         });
 
         return Results.Ok(leagueResponses);
@@ -48,7 +73,14 @@ public static class LeagueEndpoints
             return Results.NotFound("League not found");
         }
 
-        var leagueResponse = new LeagueResponseModel { Id = league.Id, Name = league.Name };
+        var leagueResponse = new LeagueResponseModel
+        {
+            Id = league.Id,
+            Name = league.Name,
+            OwnerName = league.Owner.FullName,
+            MaxTeams = league.MaxTeams,
+            IsPrivate = league.IsPrivate,
+        };
 
         return Results.Ok(leagueResponse);
     }
