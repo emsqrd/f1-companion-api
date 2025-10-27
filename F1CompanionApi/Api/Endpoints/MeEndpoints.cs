@@ -30,21 +30,9 @@ public static class MeEndpoints
         return app;
     }
 
-    private static async Task<IResult> GetUserProfileAsync(
-        HttpContext context,
-        ISupabaseAuthService authService,
-        IUserProfileService userProfileService
-    )
+    private static async Task<IResult> GetUserProfileAsync(IUserProfileService userProfileService)
     {
-        var userId = authService.GetUserId(context.User);
-
-        //TODO: replace null forgiving operators with proper null checks
-        var user = await userProfileService.GetUserProfileByAccountIdAsync(userId!);
-
-        if (user is null)
-        {
-            return Results.NotFound();
-        }
+        var user = await userProfileService.GetCurrentUserProfileAsync();
 
         return Results.Ok(user);
     }
@@ -56,8 +44,13 @@ public static class MeEndpoints
         RegisterUserRequest request
     )
     {
-        var userId = authService.GetUserId(httpContext.User);
-        var userEmail = authService.GetUserEmail(httpContext.User);
+        var userId = authService.GetRequiredUserId();
+        var userEmail = authService.GetUserEmail();
+
+        if (userEmail is null)
+        {
+            return Results.BadRequest("Email address is required for registration");
+        }
 
         var existingProfile = await userProfileService.GetUserProfileByAccountIdAsync(userId);
         if (existingProfile is not null)
@@ -81,9 +74,7 @@ public static class MeEndpoints
         UpdateUserProfileRequest updateUserProfileRequest
     )
     {
-        var userId = authService.GetUserId(httpContext.User);
-
-        var existingProfile = await userProfileService.GetUserProfileByAccountIdAsync(userId!);
+        var existingProfile = await userProfileService.GetCurrentUserProfileAsync();
         if (existingProfile is null)
         {
             return Results.NotFound("User profile not found");

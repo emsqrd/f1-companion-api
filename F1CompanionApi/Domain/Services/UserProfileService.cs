@@ -8,6 +8,8 @@ namespace F1CompanionApi.Domain.Services;
 public interface IUserProfileService
 {
     Task<UserProfile?> GetUserProfileByAccountIdAsync(string accountId);
+    Task<UserProfile?> GetCurrentUserProfileAsync();
+    Task<UserProfile> GetRequiredCurrentUserProfileAsync();
     Task<UserProfile> CreateUserProfileAsync(
         string accountId,
         string email,
@@ -21,10 +23,12 @@ public interface IUserProfileService
 public class UserProfileService : IUserProfileService
 {
     private readonly ApplicationDbContext _dbContext;
+    private readonly ISupabaseAuthService _authService;
 
-    public UserProfileService(ApplicationDbContext dbContext)
+    public UserProfileService(ApplicationDbContext dbContext, ISupabaseAuthService authService)
     {
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+        _authService = authService ?? throw new ArgumentNullException(nameof(authService));
     }
 
     public async Task<UserProfile?> GetUserProfileByAccountIdAsync(string accountId)
@@ -32,6 +36,24 @@ public class UserProfileService : IUserProfileService
         return await _dbContext
             .UserProfiles.Include(x => x.Account)
             .FirstOrDefaultAsync(x => x.AccountId == accountId);
+    }
+
+    public async Task<UserProfile?> GetCurrentUserProfileAsync()
+    {
+        var userId = _authService.GetUserId();
+        if (userId is null)
+        {
+            return null;
+        }
+
+        return await GetUserProfileByAccountIdAsync(userId);
+    }
+
+    public async Task<UserProfile> GetRequiredCurrentUserProfileAsync()
+    {
+        var userId = _authService.GetRequiredUserId();
+        return await GetUserProfileByAccountIdAsync(userId)
+            ?? throw new InvalidOperationException("User profile not found for authenticated user");
     }
 
     public async Task<UserProfile> CreateUserProfileAsync(
@@ -44,7 +66,6 @@ public class UserProfileService : IUserProfileService
 
         try
         {
-            // TODO: What do I set account created and updated by to if it's FK to user profile?
             // Create Account
             var account = new Account
             {

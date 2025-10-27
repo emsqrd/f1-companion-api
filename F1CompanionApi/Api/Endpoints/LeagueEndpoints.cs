@@ -1,4 +1,5 @@
 using F1CompanionApi.Api.Models;
+using F1CompanionApi.Data.Entities;
 using F1CompanionApi.Domain.Services;
 
 namespace F1CompanionApi.Api.Endpoints;
@@ -8,16 +9,19 @@ public static class LeagueEndpoints
     public static IEndpointRouteBuilder MapLeagueEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapPost("/leagues", CreateLeagueAsync)
+            .RequireAuthorization()
             .WithName("CreateLeague")
             .WithOpenApi()
             .WithDescription("Create a new League");
 
         app.MapGet("/leagues", GetLeaguesAsync)
+            .RequireAuthorization()
             .WithName("GetLeagues")
             .WithOpenApi()
             .WithDescription("Gets all leagues");
 
         app.MapGet("/leagues/{id}", GetLeagueByIdAsync)
+            .RequireAuthorization()
             .WithName("GetLeaguesById")
             .WithOpenApi()
             .WithDescription("Get League By Id");
@@ -33,9 +37,16 @@ public static class LeagueEndpoints
         CreateLeagueRequest createLeagueRequest
     )
     {
-        var userId = authService.GetUserId(context.User);
+        var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
 
-        var user = await userProfileService.GetUserProfileByAccountIdAsync(userId);
+        if (user is null)
+        {
+            return Results.Problem(
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "User profile not found",
+                detail: "Authenticated user does not have an associated profile"
+            );
+        }
 
         var leagueResponse = await leagueService.CreateLeagueAsync(createLeagueRequest, user.Id);
 

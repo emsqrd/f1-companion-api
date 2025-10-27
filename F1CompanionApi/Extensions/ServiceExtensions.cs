@@ -84,6 +84,7 @@ public static class ServiceExtensions
             });
 
         services.AddAuthorization();
+        services.AddHttpContextAccessor();
         services.AddScoped<ILeagueService, LeagueService>();
         services.AddScoped<IUserProfileService, UserProfileService>();
     }
