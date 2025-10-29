@@ -51,9 +51,9 @@ public static class LeagueEndpoints
         var leagueResponse = await leagueService.CreateLeagueAsync(createLeagueRequest, user.Id);
 
         return Results.Created($"/leagues/{leagueResponse.Id}", leagueResponse);
+
     }
 
-    //TODO: Scope this down to only get leagues for the authenticated user
     private async static Task<IResult> GetLeaguesAsync(ILeagueService leagueService)
     {
         var leagues = await leagueService.GetLeaguesAsync();

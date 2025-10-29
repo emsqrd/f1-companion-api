@@ -66,6 +66,6 @@ public class LeagueService : ILeagueService
 
     public async Task<League?> GetLeagueByIdAsync(int id)
     {
-        return await _dbContext.Leagues.FirstOrDefaultAsync(x => x.Id == id);
+        return await _dbContext.Leagues.Include(x => x.Owner).FirstOrDefaultAsync(x => x.Id == id);
     }
 }
