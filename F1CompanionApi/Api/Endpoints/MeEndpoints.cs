@@ -27,6 +27,12 @@ public static class MeEndpoints
             .WithDescription("Updates user profile")
             .RequireAuthorization();
 
+        app.MapGet("/me/leagues", GetMyLeaguesAsync)
+            .WithName("Get My Leagues")
+            .WithOpenApi()
+            .WithDescription("Gets leagues owned by the authenticated user")
+            .RequireAuthorization();
+
         return app;
     }
 
@@ -85,5 +91,36 @@ public static class MeEndpoints
         );
 
         return Results.Ok(updatedProfile);
+    }
+
+    private static async Task<IResult> GetMyLeaguesAsync(
+        IUserProfileService userProfileService,
+        ILeagueService leagueService
+    )
+    {
+        var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
+
+        if (user is null)
+        {
+            return Results.Problem(
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "User profile not found",
+                detail: "Authenticated user does not have an associated profile"
+            );
+        }
+
+        var leagues = await leagueService.GetLeaguesByOwnerIdAsync(user.Id);
+
+        var leagueResponses = leagues.Select(league => new LeagueResponseModel
+        {
+            Id = league.Id,
+            Name = league.Name,
+            Description = league.Description,
+            OwnerName = league.Owner.FullName,
+            MaxTeams = league.MaxTeams,
+            IsPrivate = league.IsPrivate,
+        });
+
+        return Results.Ok(leagueResponses);
     }
 }

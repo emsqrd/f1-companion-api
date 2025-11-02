@@ -14,6 +14,7 @@ public interface ILeagueService
     );
     Task<IEnumerable<League>> GetLeaguesAsync();
     Task<League?> GetLeagueByIdAsync(int id);
+    Task<IEnumerable<League>> GetLeaguesByOwnerIdAsync(int ownerId);
 }
 
 public class LeagueService : ILeagueService
@@ -67,5 +68,13 @@ public class LeagueService : ILeagueService
     public async Task<League?> GetLeagueByIdAsync(int id)
     {
         return await _dbContext.Leagues.Include(x => x.Owner).FirstOrDefaultAsync(x => x.Id == id);
+    }
+
+    public async Task<IEnumerable<League>> GetLeaguesByOwnerIdAsync(int ownerId)
+    {
+        return await _dbContext.Leagues
+            .Include(x => x.Owner)
+            .Where(x => x.OwnerId == ownerId)
+            .ToListAsync();
     }
 }
