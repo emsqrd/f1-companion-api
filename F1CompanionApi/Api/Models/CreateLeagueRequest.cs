@@ -1,5 +1,3 @@
-using System;
-
 namespace F1CompanionApi.Api.Models;
 
 public class CreateLeagueRequest

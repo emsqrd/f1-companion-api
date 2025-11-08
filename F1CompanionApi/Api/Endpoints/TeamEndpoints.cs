@@ -25,7 +25,7 @@ public static class TeamEndpoints
 
     private static async Task<IEnumerable<Team>> GetTeams(ApplicationDbContext db)
     {
-        var teams = await db.Teams.ToListAsync();
+        var teams = await db.Teams.ToListAsync() ?? [];
         return teams;
     }
 

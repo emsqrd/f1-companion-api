@@ -1,5 +1,4 @@
 using F1CompanionApi.Api.Models;
-using F1CompanionApi.Data.Entities;
 using F1CompanionApi.Domain.Services;
 
 namespace F1CompanionApi.Api.Endpoints;
@@ -39,38 +38,25 @@ public static class LeagueEndpoints
     {
         var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
 
-        if (user is null)
-        {
-            return Results.Problem(
-                statusCode: StatusCodes.Status500InternalServerError,
-                title: "User profile not found",
-                detail: "Authenticated user does not have an associated profile"
-            );
-        }
-
         var leagueResponse = await leagueService.CreateLeagueAsync(createLeagueRequest, user.Id);
 
         return Results.Created($"/leagues/{leagueResponse.Id}", leagueResponse);
 
     }
 
-    private async static Task<IResult> GetLeaguesAsync(ILeagueService leagueService)
+    private static async Task<IResult> GetLeaguesAsync(ILeagueService leagueService)
     {
         var leagues = await leagueService.GetLeaguesAsync();
 
-        if (leagues is null)
-        {
-            return Results.NotFound("Leagues not found");
-        }
-
-        var leagueResponses = leagues.Select(league => new LeagueResponseModel
+        var leagueResponses = leagues?.Select(league => new LeagueResponseModel
         {
             Id = league.Id,
             Name = league.Name,
+            Description = league.Description,
             OwnerName = league.Owner.FullName,
             MaxTeams = league.MaxTeams,
             IsPrivate = league.IsPrivate,
-        });
+        }) ?? [];
 
         return Results.Ok(leagueResponses);
     }
@@ -88,6 +74,7 @@ public static class LeagueEndpoints
         {
             Id = league.Id,
             Name = league.Name,
+            Description = league.Description,
             OwnerName = league.Owner.FullName,
             MaxTeams = league.MaxTeams,
             IsPrivate = league.IsPrivate,

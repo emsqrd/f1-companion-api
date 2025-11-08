@@ -100,15 +100,6 @@ public static class MeEndpoints
     {
         var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
 
-        if (user is null)
-        {
-            return Results.Problem(
-                statusCode: StatusCodes.Status500InternalServerError,
-                title: "User profile not found",
-                detail: "Authenticated user does not have an associated profile"
-            );
-        }
-
         var leagues = await leagueService.GetLeaguesByOwnerIdAsync(user.Id);
 
         var leagueResponses = leagues.Select(league => new LeagueResponseModel
