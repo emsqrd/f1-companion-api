@@ -1,0 +1,10 @@
+#!/bin/sh
+echo "🧪 Running .NET unit tests..."
+npm run test:quick
+
+if [ $? -ne 0 ]; then
+    echo "❌ Unit tests failed. Commit aborted."
+    exit 1
+fi
+
+echo "✅ Tests passed!"
