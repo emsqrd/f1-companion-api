@@ -1,6 +1,6 @@
+using F1CompanionApi.Api.Models;
 using F1CompanionApi.Data;
-using F1CompanionApi.Data.Models;
-using F1CompanionApi.Domain.Models;
+using F1CompanionApi.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace F1CompanionApi.Domain.Services;
@@ -8,27 +8,59 @@ namespace F1CompanionApi.Domain.Services;
 public interface IUserProfileService
 {
     Task<UserProfile?> GetUserProfileByAccountIdAsync(string accountId);
-    Task<UserProfile> CreateUserProfileAsync(string accountId, string email, string? displayName = null);
-    Task<UserProfile> UpdateUserProfileAsync(UserProfileUpdateModel updateModel);
+    Task<UserProfile?> GetCurrentUserProfileAsync();
+    Task<UserProfile> GetRequiredCurrentUserProfileAsync();
+    Task<UserProfile> CreateUserProfileAsync(
+        string accountId,
+        string email,
+        string? displayName = null
+    );
+    Task<UserProfileResponse> UpdateUserProfileAsync(
+        UpdateUserProfileRequest updateUserProfileRequest
+    );
 }
 
 public class UserProfileService : IUserProfileService
 {
     private readonly ApplicationDbContext _dbContext;
+    private readonly ISupabaseAuthService _authService;
 
-    public UserProfileService(ApplicationDbContext dbContext)
+    public UserProfileService(ApplicationDbContext dbContext, ISupabaseAuthService authService)
     {
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+        _authService = authService ?? throw new ArgumentNullException(nameof(authService));
     }
 
     public async Task<UserProfile?> GetUserProfileByAccountIdAsync(string accountId)
     {
-        return await _dbContext.UserProfiles
-            .Include(x => x.Account)
+        return await _dbContext
+            .UserProfiles.Include(x => x.Account)
             .FirstOrDefaultAsync(x => x.AccountId == accountId);
     }
 
-    public async Task<UserProfile> CreateUserProfileAsync(string accountId, string email, string? displayName = null)
+    public async Task<UserProfile?> GetCurrentUserProfileAsync()
+    {
+        var userId = _authService.GetUserId();
+        if (userId is null)
+        {
+            return null;
+        }
+
+        return await GetUserProfileByAccountIdAsync(userId);
+    }
+
+    public async Task<UserProfile> GetRequiredCurrentUserProfileAsync()
+    {
+        var userId = _authService.GetRequiredUserId();
+        return await GetUserProfileByAccountIdAsync(userId)
+            ?? throw new InvalidOperationException("User profile not found for authenticated user");
+    }
+
+    public async Task<UserProfile> CreateUserProfileAsync(
+        string accountId,
+        string email,
+        string? displayName = null
+    )
     {
         using var transaction = await _dbContext.Database.BeginTransactionAsync();
 
@@ -52,8 +84,6 @@ public class UserProfileService : IUserProfileService
                 AccountId = accountId,
                 Email = email,
                 DisplayName = displayName,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow,
             };
 
             _dbContext.UserProfiles.Add(userProfile);
@@ -70,32 +100,42 @@ public class UserProfileService : IUserProfileService
         }
     }
 
-    public async Task<UserProfile> UpdateUserProfileAsync(UserProfileUpdateModel updateModel)
+    public async Task<UserProfileResponse> UpdateUserProfileAsync(
+        UpdateUserProfileRequest updateUserProfileRequest
+    )
     {
-        var existingUserProfile = await _dbContext.UserProfiles.FirstOrDefaultAsync(x => x.Id == updateModel.Id);
+        var existingUserProfile = await _dbContext.UserProfiles.FindAsync(
+            updateUserProfileRequest.Id
+        );
 
         if (existingUserProfile is null)
-            throw new Exception("User doesn't exist");
+            throw new KeyNotFoundException($"User with ID {updateUserProfileRequest.Id} not found");
 
-        if (updateModel.DisplayName is not null)
-            existingUserProfile.DisplayName = updateModel.DisplayName;
+        if (updateUserProfileRequest.DisplayName is not null)
+            existingUserProfile.DisplayName = updateUserProfileRequest.DisplayName;
 
-        if (updateModel.Email is not null)
-            existingUserProfile.Email = updateModel.Email;
+        if (updateUserProfileRequest.Email is not null)
+            existingUserProfile.Email = updateUserProfileRequest.Email;
 
-        if (updateModel.FirstName is not null)
-            existingUserProfile.FirstName = updateModel.FirstName;
+        if (updateUserProfileRequest.FirstName is not null)
+            existingUserProfile.FirstName = updateUserProfileRequest.FirstName;
 
-        if (updateModel.LastName is not null)
-            existingUserProfile.LastName = updateModel.LastName;
+        if (updateUserProfileRequest.LastName is not null)
+            existingUserProfile.LastName = updateUserProfileRequest.LastName;
 
-        if (updateModel.AvatarUrl is not null)
-            existingUserProfile.AvatarUrl = updateModel.AvatarUrl;
-
-        existingUserProfile.UpdatedAt = DateTime.UtcNow;
+        if (updateUserProfileRequest.AvatarUrl is not null)
+            existingUserProfile.AvatarUrl = updateUserProfileRequest.AvatarUrl;
 
         await _dbContext.SaveChangesAsync();
 
-        return existingUserProfile;
+        return new UserProfileResponse
+        {
+            Id = existingUserProfile.Id,
+            DisplayName = existingUserProfile.DisplayName,
+            Email = existingUserProfile.Email,
+            FirstName = existingUserProfile.FirstName,
+            LastName = existingUserProfile.LastName,
+            AvatarUrl = existingUserProfile.AvatarUrl,
+        };
     }
 }

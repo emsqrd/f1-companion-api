@@ -9,20 +9,26 @@ namespace F1CompanionApi.Domain.Services;
 public interface ISupabaseAuthService
 {
     ClaimsPrincipal? ValidateToken(string token);
-    string? GetUserId(ClaimsPrincipal user);
-    string? GetUserEmail(ClaimsPrincipal user);
+    string? GetUserId();
+    string GetRequiredUserId();
+    string? GetUserEmail();
 }
 
 public class SupabaseAuthService : ISupabaseAuthService
 {
     private readonly string _jwtSecret;
     private readonly JwtSecurityTokenHandler _tokenHandler;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public SupabaseAuthService(IConfiguration configuration)
+    public SupabaseAuthService(
+        IConfiguration configuration,
+        IHttpContextAccessor httpContextAccessor
+    )
     {
-        _jwtSecret = configuration["Supabase:JwtSecret"] ??
-            throw new InvalidOperationException("Supabase JWT secret not configured");
+        _jwtSecret = configuration["Supabase:JwtSecret"] ?? throw new InvalidOperationException("Supabase JWT secret not configured");
         _tokenHandler = new JwtSecurityTokenHandler();
+        _httpContextAccessor =
+            httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
     }
 
     public ClaimsPrincipal? ValidateToken(string token)
@@ -38,7 +44,7 @@ public class SupabaseAuthService : ISupabaseAuthService
                 ValidateAudience = true,
                 ValidAudience = "authenticated",
                 ValidateLifetime = true,
-                ClockSkew = TimeSpan.Zero
+                ClockSkew = TimeSpan.Zero,
             };
 
             var principal = _tokenHandler.ValidateToken(token, validationParameters, out _);
@@ -50,14 +56,21 @@ public class SupabaseAuthService : ISupabaseAuthService
         }
     }
 
-    public string? GetUserId(ClaimsPrincipal user)
+    public string? GetUserId()
     {
-        return user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var user = _httpContextAccessor.HttpContext?.User;
+        return user?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
     }
 
-    public string? GetUserEmail(ClaimsPrincipal user)
+    public string GetRequiredUserId()
     {
-        return user.FindFirst(ClaimTypes.Email)?.Value ??
-            user.FindFirst("email")?.Value;
+        return GetUserId() ?? throw new InvalidOperationException("User ID not found");
+    }
+
+    public string? GetUserEmail()
+    {
+        var user = _httpContextAccessor.HttpContext?.User;
+        return user?.FindFirst(ClaimTypes.Email)?.Value
+            ?? user?.FindFirst("email")?.Value;
     }
 }

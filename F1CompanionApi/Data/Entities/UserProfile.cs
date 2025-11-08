@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace F1CompanionApi.Data.Models;
+namespace F1CompanionApi.Data.Entities;
 
 public class UserProfile
 {
@@ -11,8 +11,7 @@ public class UserProfile
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
     public string? AvatarUrl { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public DateTime UpdatedAt { get; set; }
+    public string FullName => $"{FirstName} {LastName}";
 
     //TODO: Remove this when implementing DTOs
     [JsonIgnore]

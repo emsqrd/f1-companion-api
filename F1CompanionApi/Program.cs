@@ -1,8 +1,8 @@
 using F1CompanionApi.Api.Endpoints;
-using Scalar.AspNetCore;
-using F1CompanionApi.Infrastructure.Extensions;
 using F1CompanionApi.Data;
+using F1CompanionApi.Extensions;
 using Microsoft.EntityFrameworkCore;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
@@ -24,8 +24,7 @@ using (var scope = app.Services.CreateScope())
     dbContext.Database.Migrate();
 }
 
-app.MapEndpoints()
-.MapOpenApi();
+app.MapEndpoints().MapOpenApi();
 
 app.MapScalarApiReference();
 

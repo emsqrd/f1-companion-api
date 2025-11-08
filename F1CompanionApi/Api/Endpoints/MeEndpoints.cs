@@ -1,5 +1,4 @@
 using F1CompanionApi.Api.Models;
-using F1CompanionApi.Domain.Models;
 using F1CompanionApi.Domain.Services;
 
 namespace F1CompanionApi.Api.Endpoints;
@@ -28,62 +27,91 @@ public static class MeEndpoints
             .WithDescription("Updates user profile")
             .RequireAuthorization();
 
+        app.MapGet("/me/leagues", GetMyLeaguesAsync)
+            .WithName("Get My Leagues")
+            .WithOpenApi()
+            .WithDescription("Gets leagues owned by the authenticated user")
+            .RequireAuthorization();
+
         return app;
     }
 
-    private static async Task<IResult> GetUserProfileAsync(HttpContext context, ISupabaseAuthService authService, IUserProfileService userProfileService)
+    private static async Task<IResult> GetUserProfileAsync(IUserProfileService userProfileService)
     {
-        var userId = authService.GetUserId(context.User);
-
-        //TODO: replace null forgiving operators with proper null checks
-        var user = await userProfileService.GetUserProfileByAccountIdAsync(userId!);
-
-        if (user is null)
-        {
-            return Results.NotFound();
-        }
+        var user = await userProfileService.GetCurrentUserProfileAsync();
 
         return Results.Ok(user);
     }
 
-    private static async Task<IResult> RegisterUserAsync(HttpContext httpContext, ISupabaseAuthService authService, IUserProfileService userProfileService, RegisterUserRequest request)
+    private static async Task<IResult> RegisterUserAsync(
+        HttpContext httpContext,
+        ISupabaseAuthService authService,
+        IUserProfileService userProfileService,
+        RegisterUserRequest request
+    )
     {
-        var userId = authService.GetUserId(httpContext.User);
-        var userEmail = authService.GetUserEmail(httpContext.User);
+        var userId = authService.GetRequiredUserId();
+        var userEmail = authService.GetUserEmail();
 
-        var existingProfile = await userProfileService.GetUserProfileByAccountIdAsync(userId!);
-        if (existingProfile != null)
+        if (userEmail is null)
+        {
+            return Results.BadRequest("Email address is required for registration");
+        }
+
+        var existingProfile = await userProfileService.GetUserProfileByAccountIdAsync(userId);
+        if (existingProfile is not null)
         {
             return Results.Conflict("User already registered");
         }
 
-        var userProfile = await userProfileService.CreateUserProfileAsync(userId!, userEmail!, request.DisplayName);
+        var userProfile = await userProfileService.CreateUserProfileAsync(
+            userId,
+            userEmail,
+            request.DisplayName
+        );
 
         return Results.Created($"/me/profile", userProfile);
     }
 
-    private static async Task<IResult> UpdateUserProfileAsync(HttpContext httpContext, ISupabaseAuthService authService, IUserProfileService userProfileService, UpdateUserProfileRequest request)
+    private static async Task<IResult> UpdateUserProfileAsync(
+        HttpContext httpContext,
+        ISupabaseAuthService authService,
+        IUserProfileService userProfileService,
+        UpdateUserProfileRequest updateUserProfileRequest
+    )
     {
-        var userId = authService.GetUserId(httpContext.User);
-
-        var existingProfile = await userProfileService.GetUserProfileByAccountIdAsync(userId!);
+        var existingProfile = await userProfileService.GetCurrentUserProfileAsync();
         if (existingProfile is null)
         {
             return Results.NotFound("User profile not found");
         }
 
-        var updateModel = new UserProfileUpdateModel
-        {
-            Id = existingProfile.Id,
-            DisplayName = request.DisplayName,
-            Email = request.Email,
-            FirstName = request.FirstName,
-            LastName = request.LastName,
-            AvatarUrl = request.AvatarUrl,
-        };
-
-        var updatedProfile = await userProfileService.UpdateUserProfileAsync(updateModel);
+        var updatedProfile = await userProfileService.UpdateUserProfileAsync(
+            updateUserProfileRequest
+        );
 
         return Results.Ok(updatedProfile);
+    }
+
+    private static async Task<IResult> GetMyLeaguesAsync(
+        IUserProfileService userProfileService,
+        ILeagueService leagueService
+    )
+    {
+        var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
+
+        var leagues = await leagueService.GetLeaguesByOwnerIdAsync(user.Id);
+
+        var leagueResponses = leagues.Select(league => new LeagueResponseModel
+        {
+            Id = league.Id,
+            Name = league.Name,
+            Description = league.Description,
+            OwnerName = league.Owner.FullName,
+            MaxTeams = league.MaxTeams,
+            IsPrivate = league.IsPrivate,
+        });
+
+        return Results.Ok(leagueResponses);
     }
 }

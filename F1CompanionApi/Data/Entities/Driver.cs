@@ -1,8 +1,7 @@
-namespace F1CompanionApi.Data.Models;
+namespace F1CompanionApi.Data.Entities;
 
-public class Driver
+public class Driver : BaseEntity
 {
-    public int Id { get; set; }
     public required string FirstName { get; set; }
     public required string LastName { get; set; }
     public string? CountryAbbreviation { get; set; }
