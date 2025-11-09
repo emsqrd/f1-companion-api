@@ -5,6 +5,8 @@
   "scripts": {
     "test": "dotnet test F1CompanionApi.UnitTests/F1CompanionApi.UnitTests.csproj",
     "test:quick": "dotnet test F1CompanionApi.UnitTests/F1CompanionApi.UnitTests.csproj --no-restore --verbosity minimal",
+    "test:coverage": "./run-coverage.sh",
+    "test:coverage:open": "./run-coverage.sh --open",
     "build": "dotnet build F1CompanionApi/F1CompanionApi.csproj",
     "prepare": "husky"
   },
