@@ -5,6 +5,51 @@ using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Initialize Sentry early in the application startup
+builder.WebHost.UseSentry(options =>
+{
+    // DSN and basic configuration from appsettings.json
+    options.Dsn = builder.Configuration["Sentry:Dsn"];
+    options.Debug = builder.Configuration.GetValue<bool>("Sentry:Debug");
+    options.Environment = builder.Configuration["Sentry:Environment"] ?? builder.Environment.EnvironmentName;
+
+    // Enable structured logging
+    options.Experimental.EnableLogs = builder.Configuration.GetValue<bool>("Sentry:Experimental:EnableLogs");
+
+    // Performance monitoring
+    options.TracesSampleRate = builder.Configuration.GetValue<double>("Sentry:TracesSampleRate");
+
+    // Privacy and data settings
+    options.SendDefaultPii = builder.Configuration.GetValue<bool>("Sentry:SendDefaultPii");
+    // MaxRequestBodySize is configured via MaxRequestBodySize property which takes an enum value
+    var maxBodySize = builder.Configuration["Sentry:MaxRequestBodySize"];
+    if (maxBodySize == "Always")
+    {
+        options.MaxRequestBodySize = Sentry.Extensibility.RequestSize.Always;
+    }
+
+    // Filtering callback to exclude server name for privacy
+    options.SetBeforeSend((@event, hint) =>
+    {
+        // Never report server names for privacy
+        @event.ServerName = null;
+        return @event;
+    });
+
+    // Filtering callback for structured logs
+    options.Experimental.SetBeforeSendLog(log =>
+    {
+        // Filter out trace and debug logs in production
+        if (!builder.Environment.IsDevelopment() &&
+            (log.Level is Sentry.SentryLogLevel.Debug || log.Level is Sentry.SentryLogLevel.Trace))
+        {
+            return null;
+        }
+
+        return log;
+    });
+});
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Services.AddOpenApi();

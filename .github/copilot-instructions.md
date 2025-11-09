@@ -18,9 +18,16 @@ This is a .NET 9 Minimal API application for F1 fantasy sports with Supabase aut
 - **ASP.NET Core Minimal APIs** - lightweight endpoint routing pattern
 - **Entity Framework Core 9** with PostgreSQL - ORM and database provider
 - **Supabase** - authentication and user management
+- **Sentry** - error tracking, performance monitoring, and structured logging
 - **xUnit** - test framework with Fact/Theory attributes
 - **Moq** - mocking framework for unit tests
 - **Coverlet** - code coverage collection
+
+### Specialized Guidelines
+
+For detailed guidance on specific topics, refer to these specialized instruction files:
+
+- **[Sentry Integration](instructions/sentry.md)** - Error tracking, performance monitoring, and structured logging best practices
 
 ## Development Workflow
 
