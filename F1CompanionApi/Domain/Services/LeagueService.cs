@@ -1,6 +1,7 @@
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Data;
 using F1CompanionApi.Data.Entities;
+using F1CompanionApi.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace F1CompanionApi.Domain.Services;
@@ -53,7 +54,7 @@ public class LeagueService : ILeagueService
             Id = newLeague.Id,
             Name = newLeague.Name,
             Description = newLeague.Description,
-            OwnerName = owner.FullName,
+            OwnerName = owner.GetFullName(),
             MaxTeams = newLeague.MaxTeams,
             IsPrivate = newLeague.IsPrivate,
         };
