@@ -1,5 +1,6 @@
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Domain.Services;
+using F1CompanionApi.Extensions;
 
 namespace F1CompanionApi.Api.Endpoints;
 
@@ -53,7 +54,7 @@ public static class LeagueEndpoints
             Id = league.Id,
             Name = league.Name,
             Description = league.Description,
-            OwnerName = league.Owner.FullName,
+            OwnerName = league.Owner.GetFullName(),
             MaxTeams = league.MaxTeams,
             IsPrivate = league.IsPrivate,
         }) ?? [];
@@ -75,7 +76,7 @@ public static class LeagueEndpoints
             Id = league.Id,
             Name = league.Name,
             Description = league.Description,
-            OwnerName = league.Owner.FullName,
+            OwnerName = league.Owner.GetFullName(),
             MaxTeams = league.MaxTeams,
             IsPrivate = league.IsPrivate,
         };
