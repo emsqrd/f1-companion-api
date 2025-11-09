@@ -55,7 +55,7 @@ if [ $? -eq 0 ]; then
     echo -e "${GREEN}📂 Report location: $COVERAGE_REPORT/index.html${NC}"
     
     # Open report in default browser (optional)
-    if [ "$1" == "--open" ]; then
+    if [ "$1" = "--open" ]; then
         open "$COVERAGE_REPORT/index.html" 2>/dev/null || \
         xdg-open "$COVERAGE_REPORT/index.html" 2>/dev/null || \
         echo -e "${YELLOW}Could not open browser automatically${NC}"

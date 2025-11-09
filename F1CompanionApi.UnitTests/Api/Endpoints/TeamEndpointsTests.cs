@@ -103,7 +103,7 @@ public class TeamEndpointsTests
     }
 
     // Helper methods to invoke private endpoint methods via reflection
-    private async Task<IEnumerable<Team>> InvokeGetTeams(ApplicationDbContext db)
+    private static async Task<IEnumerable<Team>> InvokeGetTeams(ApplicationDbContext db)
     {
         var method = typeof(TeamEndpoints).GetMethod(
             "GetTeams",
@@ -118,14 +118,14 @@ public class TeamEndpointsTests
         return await task;
     }
 
-    private async Task<Team?> InvokeGetTeamByIdAsync(int id, ApplicationDbContext db)
+    private static async Task<Team?> InvokeGetTeamByIdAsync(int id, ApplicationDbContext db)
     {
         var method = typeof(TeamEndpoints).GetMethod(
             "GetTeamByIdAsync",
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
         );
 
-        var task = (Task<Team>)method!.Invoke(
+        var task = (Task<Team?>)method!.Invoke(
             null,
             new object[] { id, db }
         )!;
