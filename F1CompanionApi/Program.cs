@@ -58,6 +58,9 @@ builder.AddApplicationServices();
 
 var app = builder.Build();
 
+app.UseExceptionHandler();
+app.UseStatusCodePages();
+
 app.UseCors("AllowedOrigins");
 app.UseAuthentication();
 app.UseAuthorization();

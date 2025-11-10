@@ -12,6 +12,7 @@ public static class ServiceExtensions
     public static void AddApplicationServices(this IHostApplicationBuilder builder)
     {
         builder.Services.AddEndpointsApiExplorer();
+        builder.Services.AddProblemDetails();
 
         // Configure Sentry logging integration
         builder.Services.AddLogging(logging =>
