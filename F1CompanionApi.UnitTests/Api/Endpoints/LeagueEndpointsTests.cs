@@ -4,6 +4,7 @@ using F1CompanionApi.Data.Entities;
 using F1CompanionApi.Domain.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace F1CompanionApi.UnitTests.Api.Endpoints;
@@ -14,6 +15,7 @@ public class LeagueEndpointsTests
     private readonly Mock<IUserProfileService> _mockUserProfileService;
     private readonly Mock<ILeagueService> _mockLeagueService;
     private readonly Mock<HttpContext> _mockHttpContext;
+    private readonly Mock<ILogger> _mockLogger;
 
     public LeagueEndpointsTests()
     {
@@ -21,6 +23,7 @@ public class LeagueEndpointsTests
         _mockUserProfileService = new Mock<IUserProfileService>();
         _mockLeagueService = new Mock<ILeagueService>();
         _mockHttpContext = new Mock<HttpContext>();
+        _mockLogger = new Mock<ILogger>();
     }
 
     [Fact]
@@ -71,7 +74,7 @@ public class LeagueEndpointsTests
     }
 
     [Fact]
-    public async Task CreateLeagueAsync_UserProfileServiceThrows_PropagatesException()
+    public async Task CreateLeagueAsync_UserProfileServiceThrows_ReturnsBadRequest()
     {
         // Arrange
         var request = new CreateLeagueRequest
@@ -83,10 +86,13 @@ public class LeagueEndpointsTests
             .Setup(x => x.GetRequiredCurrentUserProfileAsync())
             .ThrowsAsync(new InvalidOperationException("User not found"));
 
-        // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(
-            () => InvokeCreateLeagueAsync(request)
-        );
+        // Act
+        var result = await InvokeCreateLeagueAsync(request);
+
+        // Assert
+        Assert.IsType<ProblemHttpResult>(result);
+        var problemResult = (ProblemHttpResult)result;
+        Assert.Equal(StatusCodes.Status400BadRequest, problemResult.StatusCode);
     }
 
     [Fact]
@@ -236,9 +242,9 @@ public class LeagueEndpointsTests
         var result = await InvokeGetLeagueByIdAsync(999);
 
         // Assert
-        Assert.IsType<NotFound<string>>(result);
-        var notFoundResult = (NotFound<string>)result;
-        Assert.Equal("League not found", notFoundResult.Value);
+        Assert.IsType<ProblemHttpResult>(result);
+        var problemResult = (ProblemHttpResult)result;
+        Assert.Equal(StatusCodes.Status404NotFound, problemResult.StatusCode);
     }
 
     // Helper methods to invoke private endpoint methods via reflection
@@ -257,7 +263,8 @@ public class LeagueEndpointsTests
                 _mockAuthService.Object,
                 _mockUserProfileService.Object,
                 _mockLeagueService.Object,
-                request
+                request,
+                _mockLogger.Object
             }
         )!;
 
@@ -273,7 +280,7 @@ public class LeagueEndpointsTests
 
         var task = (Task<IResult>)method!.Invoke(
             null,
-            new object[] { _mockLeagueService.Object }
+            new object[] { _mockLeagueService.Object, _mockLogger.Object }
         )!;
 
         return await task;
@@ -288,7 +295,7 @@ public class LeagueEndpointsTests
 
         var task = (Task<IResult>)method!.Invoke(
             null,
-            new object[] { _mockLeagueService.Object, id }
+            new object[] { _mockLeagueService.Object, id, _mockLogger.Object }
         )!;
 
         return await task;

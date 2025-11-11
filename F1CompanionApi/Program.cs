@@ -15,7 +15,7 @@ builder.WebHost.UseSentry(options =>
     options.Environment = builder.Configuration["Sentry:Environment"] ?? builder.Environment.EnvironmentName;
 
     // Enable structured logging
-    options.Experimental.EnableLogs = builder.Configuration.GetValue<bool>("Sentry:Experimental:EnableLogs");
+    options.Experimental.EnableLogs = true;
 
     // Performance monitoring
     options.TracesSampleRate = builder.Configuration.GetValue<double>("Sentry:TracesSampleRate");
@@ -50,13 +50,15 @@ builder.WebHost.UseSentry(options =>
         return log;
     });
 });
-builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
+
 builder.Services.AddOpenApi();
 
 builder.AddApplicationServices();
 
 var app = builder.Build();
+
+app.UseExceptionHandler();
+app.UseStatusCodePages();
 
 app.UseCors("AllowedOrigins");
 app.UseAuthentication();

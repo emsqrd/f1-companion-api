@@ -3,11 +3,20 @@ using F1CompanionApi.Data;
 using F1CompanionApi.Data.Entities;
 using F1CompanionApi.Domain.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace F1CompanionApi.UnitTests.Services;
 
 public class LeagueServiceTests
 {
+    private readonly Mock<ILogger<LeagueService>> _mockLogger;
+
+    public LeagueServiceTests()
+    {
+        _mockLogger = new Mock<ILogger<LeagueService>>();
+    }
+
     private ApplicationDbContext CreateInMemoryContext()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
@@ -22,7 +31,7 @@ public class LeagueServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new LeagueService(context);
+        var service = new LeagueService(context, _mockLogger.Object);
 
         var owner = new UserProfile
         {
@@ -57,7 +66,7 @@ public class LeagueServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new LeagueService(context);
+        var service = new LeagueService(context, _mockLogger.Object);
 
         var owner = new UserProfile
         {
@@ -91,7 +100,7 @@ public class LeagueServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new LeagueService(context);
+        var service = new LeagueService(context, _mockLogger.Object);
 
         var request = new CreateLeagueRequest
         {
@@ -111,7 +120,7 @@ public class LeagueServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new LeagueService(context);
+        var service = new LeagueService(context, _mockLogger.Object);
 
         // Act
         var result = await service.GetLeaguesAsync();
@@ -126,7 +135,7 @@ public class LeagueServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new LeagueService(context);
+        var service = new LeagueService(context, _mockLogger.Object);
 
         var owner = new UserProfile
         {
@@ -168,7 +177,7 @@ public class LeagueServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new LeagueService(context);
+        var service = new LeagueService(context, _mockLogger.Object);
 
         var owner = new UserProfile
         {
@@ -204,7 +213,7 @@ public class LeagueServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new LeagueService(context);
+        var service = new LeagueService(context, _mockLogger.Object);
 
         // Act
         var result = await service.GetLeagueByIdAsync(999);
@@ -218,7 +227,7 @@ public class LeagueServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new LeagueService(context);
+        var service = new LeagueService(context, _mockLogger.Object);
 
         var owner1 = new UserProfile
         {
@@ -268,7 +277,7 @@ public class LeagueServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new LeagueService(context);
+        var service = new LeagueService(context, _mockLogger.Object);
 
         var owner = new UserProfile
         {
@@ -292,6 +301,6 @@ public class LeagueServiceTests
     public void Constructor_NullDbContext_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new LeagueService(null!));
+        Assert.Throws<ArgumentNullException>(() => new LeagueService(null!, _mockLogger.Object));
     }
 }

@@ -2,6 +2,7 @@ using F1CompanionApi.Api.Models;
 using F1CompanionApi.Data;
 using F1CompanionApi.Data.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace F1CompanionApi.Domain.Services;
 
@@ -24,18 +25,31 @@ public class UserProfileService : IUserProfileService
 {
     private readonly ApplicationDbContext _dbContext;
     private readonly ISupabaseAuthService _authService;
+    private readonly ILogger<UserProfileService> _logger;
 
-    public UserProfileService(ApplicationDbContext dbContext, ISupabaseAuthService authService)
+    public UserProfileService(
+        ApplicationDbContext dbContext,
+        ISupabaseAuthService authService,
+        ILogger<UserProfileService> logger)
     {
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         _authService = authService ?? throw new ArgumentNullException(nameof(authService));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task<UserProfile?> GetUserProfileByAccountIdAsync(string accountId)
     {
-        return await _dbContext
+        _logger.LogDebug("Fetching user profile for account {AccountId}", accountId);
+        var profile = await _dbContext
             .UserProfiles.Include(x => x.Account)
             .FirstOrDefaultAsync(x => x.AccountId == accountId);
+
+        if (profile is null)
+        {
+            _logger.LogDebug("User profile not found for account {AccountId}", accountId);
+        }
+
+        return profile;
     }
 
     public async Task<UserProfile?> GetCurrentUserProfileAsync()
@@ -43,6 +57,7 @@ public class UserProfileService : IUserProfileService
         var userId = _authService.GetUserId();
         if (userId is null)
         {
+            _logger.LogWarning("No authenticated user ID found when fetching current user profile");
             return null;
         }
 
@@ -52,8 +67,15 @@ public class UserProfileService : IUserProfileService
     public async Task<UserProfile> GetRequiredCurrentUserProfileAsync()
     {
         var userId = _authService.GetRequiredUserId();
-        return await GetUserProfileByAccountIdAsync(userId)
-            ?? throw new InvalidOperationException("User profile not found for authenticated user");
+        var profile = await GetUserProfileByAccountIdAsync(userId);
+
+        if (profile is null)
+        {
+            _logger.LogError("User profile not found for authenticated user {UserId}", userId);
+            throw new InvalidOperationException("User profile not found for authenticated user");
+        }
+
+        return profile;
     }
 
     public async Task<UserProfile> CreateUserProfileAsync(
@@ -62,6 +84,9 @@ public class UserProfileService : IUserProfileService
         string? displayName = null
     )
     {
+        _logger.LogInformation("Creating user profile for account {AccountId} with email {Email}",
+            accountId, email);
+
         using var transaction = await _dbContext.Database.BeginTransactionAsync();
 
         try
@@ -91,10 +116,15 @@ public class UserProfileService : IUserProfileService
             await _dbContext.SaveChangesAsync();
             await transaction.CommitAsync();
 
+            _logger.LogInformation("Successfully created user profile {ProfileId} for account {AccountId}",
+                userProfile.Id, accountId);
+
             return userProfile;
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogError(ex, "Failed to create user profile for account {AccountId}. Transaction rolled back.",
+                accountId);
             await transaction.RollbackAsync();
             throw;
         }
@@ -104,12 +134,18 @@ public class UserProfileService : IUserProfileService
         UpdateUserProfileRequest updateUserProfileRequest
     )
     {
+        _logger.LogDebug("Updating user profile {ProfileId}", updateUserProfileRequest.Id);
+
         var existingUserProfile = await _dbContext.UserProfiles.FindAsync(
             updateUserProfileRequest.Id
         );
 
         if (existingUserProfile is null)
+        {
+            _logger.LogError("User profile {ProfileId} not found when attempting update",
+                updateUserProfileRequest.Id);
             throw new KeyNotFoundException($"User with ID {updateUserProfileRequest.Id} not found");
+        }
 
         if (updateUserProfileRequest.DisplayName is not null)
             existingUserProfile.DisplayName = updateUserProfileRequest.DisplayName;
@@ -127,6 +163,8 @@ public class UserProfileService : IUserProfileService
             existingUserProfile.AvatarUrl = updateUserProfileRequest.AvatarUrl;
 
         await _dbContext.SaveChangesAsync();
+
+        _logger.LogInformation("Successfully updated user profile {ProfileId}", existingUserProfile.Id);
 
         return new UserProfileResponse
         {

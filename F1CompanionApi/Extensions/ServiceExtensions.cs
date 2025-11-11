@@ -12,6 +12,7 @@ public static class ServiceExtensions
     public static void AddApplicationServices(this IHostApplicationBuilder builder)
     {
         builder.Services.AddEndpointsApiExplorer();
+        builder.Services.AddProblemDetails();
 
         // Configure Sentry logging integration
         builder.Services.AddLogging(logging =>
@@ -20,6 +21,10 @@ public static class ServiceExtensions
             // This ensures all ILogger calls are captured as structured logs in Sentry
             logging.AddConfiguration(builder.Configuration.GetSection("Logging"));
         });
+
+        // Register non-generic ILogger for endpoints (creates logger with "F1CompanionApi.Api.Endpoints" category)
+        builder.Services.AddSingleton(serviceProvider =>
+            serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("F1CompanionApi.Api.Endpoints"));
 
         builder.Services.AddServices(builder.Configuration);
         builder.Services.AddDbContext(builder.Configuration);

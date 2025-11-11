@@ -4,6 +4,7 @@ using F1CompanionApi.Data.Entities;
 using F1CompanionApi.Domain.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace F1CompanionApi.UnitTests.Api.Endpoints;
@@ -14,6 +15,7 @@ public class MeEndpointsTests
     private readonly Mock<IUserProfileService> _mockUserProfileService;
     private readonly Mock<ILeagueService> _mockLeagueService;
     private readonly Mock<HttpContext> _mockHttpContext;
+    private readonly Mock<ILogger> _mockLogger;
 
     public MeEndpointsTests()
     {
@@ -21,6 +23,7 @@ public class MeEndpointsTests
         _mockUserProfileService = new Mock<IUserProfileService>();
         _mockLeagueService = new Mock<ILeagueService>();
         _mockHttpContext = new Mock<HttpContext>();
+        _mockLogger = new Mock<ILogger>();
     }
 
     [Theory]
@@ -87,9 +90,9 @@ public class MeEndpointsTests
         var result = await InvokeRegisterUserAsync(request);
 
         // Assert
-        Assert.IsType<BadRequest<string>>(result);
-        var badRequestResult = (BadRequest<string>)result;
-        Assert.Equal("Email address is required for registration", badRequestResult.Value);
+        Assert.IsType<ProblemHttpResult>(result);
+        var problemResult = (ProblemHttpResult)result;
+        Assert.Equal(StatusCodes.Status400BadRequest, problemResult.StatusCode);
     }
 
     [Fact]
@@ -123,9 +126,9 @@ public class MeEndpointsTests
         var result = await InvokeRegisterUserAsync(request);
 
         // Assert
-        Assert.IsType<Conflict<string>>(result);
-        var conflictResult = (Conflict<string>)result;
-        Assert.Equal("User already registered", conflictResult.Value);
+        Assert.IsType<ProblemHttpResult>(result);
+        var problemResult = (ProblemHttpResult)result;
+        Assert.Equal(StatusCodes.Status409Conflict, problemResult.StatusCode);
     }
 
     [Fact]
@@ -192,9 +195,9 @@ public class MeEndpointsTests
         var result = await InvokeUpdateUserProfileAsync(updateRequest);
 
         // Assert
-        Assert.IsType<NotFound<string>>(result);
-        var notFoundResult = (NotFound<string>)result;
-        Assert.Equal("User profile not found", notFoundResult.Value);
+        Assert.IsType<ProblemHttpResult>(result);
+        var problemResult = (ProblemHttpResult)result;
+        Assert.Equal(StatusCodes.Status404NotFound, problemResult.StatusCode);
     }
 
     [Fact]
@@ -250,15 +253,13 @@ public class MeEndpointsTests
         var result = await InvokeGetMyLeaguesAsync();
 
         // Assert
-        Assert.IsType<Ok<IEnumerable<LeagueResponseModel>>>(result);
-        var okResult = (Ok<IEnumerable<LeagueResponseModel>>)result;
-        Assert.NotNull(okResult.Value);
-        var leagueList = okResult.Value.ToList();
-        Assert.Equal(2, leagueList.Count);
-        Assert.Equal("League 1", leagueList[0].Name);
-        Assert.Equal("John Doe", leagueList[0].OwnerName);
-        Assert.Equal("League 2", leagueList[1].Name);
-        Assert.Equal(20, leagueList[1].MaxTeams);
+        Assert.IsType<Ok<List<LeagueResponseModel>>>(result);
+        var okResult = (Ok<List<LeagueResponseModel>>)result;
+        Assert.Equal(2, okResult.Value!.Count);
+        Assert.Equal("League 1", okResult.Value[0].Name);
+        Assert.Equal("John Doe", okResult.Value[0].OwnerName);
+        Assert.Equal("League 2", okResult.Value[1].Name);
+        Assert.Equal(20, okResult.Value[1].MaxTeams);
     }
 
     [Fact]
@@ -286,24 +287,27 @@ public class MeEndpointsTests
         var result = await InvokeGetMyLeaguesAsync();
 
         // Assert
-        Assert.IsType<Ok<IEnumerable<LeagueResponseModel>>>(result);
-        var okResult = (Ok<IEnumerable<LeagueResponseModel>>)result;
+        Assert.IsType<Ok<List<LeagueResponseModel>>>(result);
+        var okResult = (Ok<List<LeagueResponseModel>>)result;
         Assert.NotNull(okResult.Value);
         Assert.Empty(okResult.Value);
     }
 
     [Fact]
-    public async Task GetMyLeaguesAsync_ServiceThrowsException_PropagatesException()
+    public async Task GetMyLeaguesAsync_ServiceThrowsException_ReturnsBadRequest()
     {
         // Arrange
         _mockUserProfileService
             .Setup(x => x.GetRequiredCurrentUserProfileAsync())
             .ThrowsAsync(new InvalidOperationException("User not found"));
 
-        // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(
-            () => InvokeGetMyLeaguesAsync()
-        );
+        // Act
+        var result = await InvokeGetMyLeaguesAsync();
+
+        // Assert
+        Assert.IsType<ProblemHttpResult>(result);
+        var problemResult = (ProblemHttpResult)result;
+        Assert.Equal(StatusCodes.Status400BadRequest, problemResult.StatusCode);
     }
 
     // Helper methods to invoke private endpoint methods via reflection
@@ -321,7 +325,8 @@ public class MeEndpointsTests
                 _mockHttpContext.Object,
                 _mockAuthService.Object,
                 _mockUserProfileService.Object,
-                request
+                request,
+                _mockLogger.Object
             }
         )!;
 
@@ -344,7 +349,8 @@ public class MeEndpointsTests
                 _mockHttpContext.Object,
                 _mockAuthService.Object,
                 _mockUserProfileService.Object,
-                updateRequest
+                updateRequest,
+                _mockLogger.Object
             }
         )!;
 
@@ -363,7 +369,8 @@ public class MeEndpointsTests
             new object[]
             {
                 _mockUserProfileService.Object,
-                _mockLeagueService.Object
+                _mockLeagueService.Object,
+                _mockLogger.Object
             }
         )!;
 

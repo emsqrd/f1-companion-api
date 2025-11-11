@@ -1,12 +1,23 @@
 using F1CompanionApi.Api.Endpoints;
 using F1CompanionApi.Data;
 using F1CompanionApi.Data.Entities;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace F1CompanionApi.UnitTests.Api.Endpoints;
 
 public class TeamEndpointsTests
 {
+    private readonly Mock<ILogger> _mockLogger;
+
+    public TeamEndpointsTests()
+    {
+        _mockLogger = new Mock<ILogger>();
+    }
+
     private ApplicationDbContext CreateInMemoryContext()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
@@ -81,16 +92,17 @@ public class TeamEndpointsTests
         var result = await InvokeGetTeamByIdAsync(team.Id, context);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal(team.Id, result.Id);
-        Assert.Equal("Findable Team", result.Name);
-        Assert.Equal("Team Owner", result.OwnerName);
-        Assert.Equal(1, result.Rank);
-        Assert.Equal(200, result.TotalPoints);
+        Assert.IsType<Ok<Team>>(result);
+        var okResult = (Ok<Team>)result;
+        Assert.Equal(team.Id, okResult.Value!.Id);
+        Assert.Equal("Findable Team", okResult.Value.Name);
+        Assert.Equal("Team Owner", okResult.Value.OwnerName);
+        Assert.Equal(1, okResult.Value.Rank);
+        Assert.Equal(200, okResult.Value.TotalPoints);
     }
 
     [Fact]
-    public async Task GetTeamByIdAsync_NonExistentTeam_ReturnsNull()
+    public async Task GetTeamByIdAsync_NonExistentTeam_ReturnsProblem()
     {
         // Arrange
         using var context = CreateInMemoryContext();
@@ -99,11 +111,11 @@ public class TeamEndpointsTests
         var result = await InvokeGetTeamByIdAsync(999, context);
 
         // Assert
-        Assert.Null(result);
+        Assert.IsType<ProblemHttpResult>(result);
     }
 
     // Helper methods to invoke private endpoint methods via reflection
-    private static async Task<IEnumerable<Team>> InvokeGetTeams(ApplicationDbContext db)
+    private async Task<IEnumerable<Team>> InvokeGetTeams(ApplicationDbContext db)
     {
         var method = typeof(TeamEndpoints).GetMethod(
             "GetTeams",
@@ -112,22 +124,22 @@ public class TeamEndpointsTests
 
         var task = (Task<IEnumerable<Team>>)method!.Invoke(
             null,
-            new object[] { db }
+            new object[] { db, _mockLogger.Object }
         )!;
 
         return await task;
     }
 
-    private static async Task<Team?> InvokeGetTeamByIdAsync(int id, ApplicationDbContext db)
+    private async Task<IResult> InvokeGetTeamByIdAsync(int id, ApplicationDbContext db)
     {
         var method = typeof(TeamEndpoints).GetMethod(
             "GetTeamByIdAsync",
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
         );
 
-        var task = (Task<Team?>)method!.Invoke(
+        var task = (Task<IResult>)method!.Invoke(
             null,
-            new object[] { id, db }
+            new object[] { id, db, _mockLogger.Object }
         )!;
 
         return await task;

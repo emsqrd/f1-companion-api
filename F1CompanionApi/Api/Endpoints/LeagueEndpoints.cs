@@ -1,6 +1,9 @@
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Domain.Services;
 using F1CompanionApi.Extensions;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace F1CompanionApi.Api.Endpoints;
 
@@ -34,19 +37,44 @@ public static class LeagueEndpoints
         ISupabaseAuthService authService,
         IUserProfileService userProfileService,
         ILeagueService leagueService,
-        CreateLeagueRequest createLeagueRequest
+        CreateLeagueRequest createLeagueRequest,
+        [FromServices] ILogger logger
     )
     {
-        var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
+        logger.LogInformation("Creating league {LeagueName}", createLeagueRequest.Name);
 
-        var leagueResponse = await leagueService.CreateLeagueAsync(createLeagueRequest, user.Id);
+        try
+        {
+            var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
+            var leagueResponse = await leagueService.CreateLeagueAsync(createLeagueRequest, user.Id);
 
-        return Results.Created($"/leagues/{leagueResponse.Id}", leagueResponse);
+            logger.LogInformation("Successfully created league {LeagueId} for user {UserId}",
+                leagueResponse.Id, user.Id);
 
+            return Results.Created($"/leagues/{leagueResponse.Id}", leagueResponse);
+        }
+        catch (InvalidOperationException ex)
+        {
+            logger.LogWarning(ex, "Invalid operation when creating league {LeagueName}",
+                createLeagueRequest.Name);
+            return Results.Problem(
+                detail: ex.Message,
+                statusCode: StatusCodes.Status400BadRequest
+            );
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Unexpected error creating league {LeagueName}",
+                createLeagueRequest.Name);
+            throw;
+        }
     }
 
-    private static async Task<IResult> GetLeaguesAsync(ILeagueService leagueService)
+    private static async Task<IResult> GetLeaguesAsync(
+        ILeagueService leagueService,
+        [FromServices] ILogger logger)
     {
+        logger.LogDebug("Fetching all leagues");
         var leagues = await leagueService.GetLeaguesAsync();
 
         var leagueResponses = leagues?.Select(league => new LeagueResponseModel
@@ -62,13 +90,22 @@ public static class LeagueEndpoints
         return Results.Ok(leagueResponses);
     }
 
-    private static async Task<IResult> GetLeagueByIdAsync(ILeagueService leagueService, int id)
+    private static async Task<IResult> GetLeagueByIdAsync(
+        ILeagueService leagueService,
+        int id,
+        [FromServices] ILogger logger
+    )
     {
+        logger.LogDebug("Fetching league {LeagueId}", id);
         var league = await leagueService.GetLeagueByIdAsync(id);
 
         if (league is null)
         {
-            return Results.NotFound("League not found");
+            logger.LogWarning("League {LeagueId} not found", id);
+            return Results.Problem(
+                detail: "League not found",
+                statusCode: StatusCodes.Status404NotFound
+            );
         }
 
         var leagueResponse = new LeagueResponseModel

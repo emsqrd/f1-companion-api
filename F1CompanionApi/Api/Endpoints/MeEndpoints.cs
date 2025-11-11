@@ -1,6 +1,9 @@
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Domain.Services;
 using F1CompanionApi.Extensions;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace F1CompanionApi.Api.Endpoints;
 
@@ -37,82 +40,164 @@ public static class MeEndpoints
         return app;
     }
 
-    private static async Task<IResult> GetUserProfileAsync(IUserProfileService userProfileService)
+    private static async Task<IResult> GetUserProfileAsync(
+        IUserProfileService userProfileService,
+        [FromServices] ILogger logger)
     {
+        logger.LogDebug("Fetching current user profile");
         var user = await userProfileService.GetCurrentUserProfileAsync();
+
+        if (user is null)
+        {
+            logger.LogWarning("No user profile found for authenticated user");
+            return Results.Problem(
+                detail: "User profile not found",
+                statusCode: StatusCodes.Status404NotFound
+            );
+        }
 
         return Results.Ok(user);
     }
 
     private static async Task<IResult> RegisterUserAsync(
-        HttpContext httpContext,
+        HttpContext context,
         ISupabaseAuthService authService,
         IUserProfileService userProfileService,
-        RegisterUserRequest request
+        RegisterUserRequest request,
+        [FromServices] ILogger logger
     )
     {
         var userId = authService.GetRequiredUserId();
         var userEmail = authService.GetUserEmail();
 
+        logger.LogInformation("Registering user {UserId}", userId);
+
         if (userEmail is null)
         {
-            return Results.BadRequest("Email address is required for registration");
+            logger.LogWarning("Registration attempted without email for user {UserId}", userId);
+            return Results.Problem(
+                detail: "Email address is required for registration",
+                statusCode: StatusCodes.Status400BadRequest
+            );
         }
 
         var existingProfile = await userProfileService.GetUserProfileByAccountIdAsync(userId);
         if (existingProfile is not null)
         {
-            return Results.Conflict("User already registered");
+            logger.LogWarning("User {UserId} already registered", userId);
+            return Results.Problem(
+                detail: "User already registered",
+                statusCode: StatusCodes.Status409Conflict
+            );
         }
 
-        var userProfile = await userProfileService.CreateUserProfileAsync(
-            userId,
-            userEmail,
-            request.DisplayName
-        );
+        try
+        {
+            var userProfile = await userProfileService.CreateUserProfileAsync(
+                userId,
+                userEmail,
+                request.DisplayName
+            );
 
-        return Results.Created($"/me/profile", userProfile);
+            logger.LogInformation("Successfully registered user {UserId} with profile {ProfileId}",
+                userId, userProfile.Id);
+
+            return Results.Created($"/me/profile", userProfile);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to register user {UserId}", userId);
+            throw;
+        }
     }
 
     private static async Task<IResult> UpdateUserProfileAsync(
         HttpContext httpContext,
         ISupabaseAuthService authService,
         IUserProfileService userProfileService,
-        UpdateUserProfileRequest updateUserProfileRequest
+        UpdateUserProfileRequest updateUserProfileRequest,
+        [FromServices] ILogger logger
     )
     {
+        logger.LogInformation("Updating user profile {ProfileId}", updateUserProfileRequest.Id);
+
         var existingProfile = await userProfileService.GetCurrentUserProfileAsync();
         if (existingProfile is null)
         {
-            return Results.NotFound("User profile not found");
+            logger.LogWarning("User profile not found when attempting update");
+            return Results.Problem(
+                detail: "User profile not found",
+                statusCode: StatusCodes.Status404NotFound
+            );
         }
 
-        var updatedProfile = await userProfileService.UpdateUserProfileAsync(
-            updateUserProfileRequest
-        );
+        try
+        {
+            var updatedProfile = await userProfileService.UpdateUserProfileAsync(
+                updateUserProfileRequest
+            );
 
-        return Results.Ok(updatedProfile);
+            logger.LogInformation("Successfully updated user profile {ProfileId}",
+                updateUserProfileRequest.Id);
+
+            return Results.Ok(updatedProfile);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            logger.LogWarning(ex, "User profile {ProfileId} not found during update",
+                updateUserProfileRequest.Id);
+            return Results.Problem(
+                detail: ex.Message,
+                statusCode: StatusCodes.Status404NotFound
+            );
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to update user profile {ProfileId}",
+                updateUserProfileRequest.Id);
+            throw;
+        }
     }
 
     private static async Task<IResult> GetMyLeaguesAsync(
         IUserProfileService userProfileService,
-        ILeagueService leagueService
+        ILeagueService leagueService,
+        [FromServices] ILogger logger
     )
     {
-        var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
+        logger.LogDebug("Fetching leagues for current user");
 
-        var leagues = await leagueService.GetLeaguesByOwnerIdAsync(user.Id);
-
-        var leagueResponses = leagues.Select(league => new LeagueResponseModel
+        try
         {
-            Id = league.Id,
-            Name = league.Name,
-            Description = league.Description,
-            OwnerName = league.Owner.GetFullName(),
-            MaxTeams = league.MaxTeams,
-            IsPrivate = league.IsPrivate,
-        });
+            var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
+            var leagues = await leagueService.GetLeaguesByOwnerIdAsync(user.Id);
 
-        return Results.Ok(leagueResponses);
+            var leagueResponses = leagues.Select(league => new LeagueResponseModel
+            {
+                Id = league.Id,
+                Name = league.Name,
+                Description = league.Description,
+                OwnerName = league.Owner.GetFullName(),
+                MaxTeams = league.MaxTeams,
+                IsPrivate = league.IsPrivate,
+            }).ToList();
+
+            logger.LogDebug("Retrieved {LeagueCount} leagues for current user", leagueResponses.Count);
+
+            return Results.Ok(leagueResponses);
+        }
+        catch (InvalidOperationException ex)
+        {
+            logger.LogWarning(ex, "User profile not found when fetching leagues");
+            return Results.Problem(
+                detail: ex.Message,
+                statusCode: StatusCodes.Status400BadRequest
+            );
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to fetch leagues for current user");
+            throw;
+        }
     }
 }

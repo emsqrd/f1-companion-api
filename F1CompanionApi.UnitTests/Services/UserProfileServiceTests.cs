@@ -3,6 +3,7 @@ using F1CompanionApi.Data;
 using F1CompanionApi.Data.Entities;
 using F1CompanionApi.Domain.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace F1CompanionApi.UnitTests.Services;
@@ -12,6 +13,12 @@ public class UserProfileServiceTests
     private const string TestAccountId = "test-account-123";
     private const string TestEmail = "test@example.com";
     private const string TestDisplayName = "Test User";
+    private readonly Mock<ILogger<UserProfileService>> _mockLogger;
+
+    public UserProfileServiceTests()
+    {
+        _mockLogger = new Mock<ILogger<UserProfileService>>();
+    }
 
     private static ApplicationDbContext CreateInMemoryContext()
     {
@@ -31,7 +38,7 @@ public class UserProfileServiceTests
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(
-            () => new UserProfileService(null!, authService.Object)
+            () => new UserProfileService(null!, authService.Object, _mockLogger.Object)
         );
     }
 
@@ -43,7 +50,7 @@ public class UserProfileServiceTests
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(
-            () => new UserProfileService(context, null!)
+            () => new UserProfileService(context, null!, _mockLogger.Object)
         );
     }
 
@@ -53,7 +60,7 @@ public class UserProfileServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         var authService = new Mock<ISupabaseAuthService>();
-        var service = new UserProfileService(context, authService.Object);
+        var service = new UserProfileService(context, authService.Object, _mockLogger.Object);
 
         var account = new Account
         {
@@ -91,7 +98,7 @@ public class UserProfileServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         var authService = new Mock<ISupabaseAuthService>();
-        var service = new UserProfileService(context, authService.Object);
+        var service = new UserProfileService(context, authService.Object, _mockLogger.Object);
 
         // Act
         var result = await service.GetUserProfileByAccountIdAsync("non-existent-account");
@@ -108,7 +115,7 @@ public class UserProfileServiceTests
         var authService = new Mock<ISupabaseAuthService>();
         authService.Setup(x => x.GetUserId()).Returns(TestAccountId);
 
-        var service = new UserProfileService(context, authService.Object);
+        var service = new UserProfileService(context, authService.Object, _mockLogger.Object);
 
         var account = new Account
         {
@@ -147,7 +154,7 @@ public class UserProfileServiceTests
         var authService = new Mock<ISupabaseAuthService>();
         authService.Setup(x => x.GetUserId()).Returns((string?)null);
 
-        var service = new UserProfileService(context, authService.Object);
+        var service = new UserProfileService(context, authService.Object, _mockLogger.Object);
 
         // Act
         var result = await service.GetCurrentUserProfileAsync();
@@ -165,7 +172,7 @@ public class UserProfileServiceTests
         var authService = new Mock<ISupabaseAuthService>();
         authService.Setup(x => x.GetRequiredUserId()).Returns(TestAccountId);
 
-        var service = new UserProfileService(context, authService.Object);
+        var service = new UserProfileService(context, authService.Object, _mockLogger.Object);
 
         var account = new Account
         {
@@ -204,7 +211,7 @@ public class UserProfileServiceTests
         var authService = new Mock<ISupabaseAuthService>();
         authService.Setup(x => x.GetRequiredUserId()).Returns(TestAccountId);
 
-        var service = new UserProfileService(context, authService.Object);
+        var service = new UserProfileService(context, authService.Object, _mockLogger.Object);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
@@ -219,7 +226,7 @@ public class UserProfileServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         var authService = new Mock<ISupabaseAuthService>();
-        var service = new UserProfileService(context, authService.Object);
+        var service = new UserProfileService(context, authService.Object, _mockLogger.Object);
 
         // Act
         var result = await service.CreateUserProfileAsync(
@@ -251,7 +258,7 @@ public class UserProfileServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         var authService = new Mock<ISupabaseAuthService>();
-        var service = new UserProfileService(context, authService.Object);
+        var service = new UserProfileService(context, authService.Object, _mockLogger.Object);
 
         // Act
         var result = await service.CreateUserProfileAsync(TestAccountId, TestEmail);
@@ -269,7 +276,7 @@ public class UserProfileServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         var authService = new Mock<ISupabaseAuthService>();
-        var service = new UserProfileService(context, authService.Object);
+        var service = new UserProfileService(context, authService.Object, _mockLogger.Object);
 
         // Create an account first to cause a duplicate key error
         var existingAccount = new Account
@@ -300,7 +307,7 @@ public class UserProfileServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         var authService = new Mock<ISupabaseAuthService>();
-        var service = new UserProfileService(context, authService.Object);
+        var service = new UserProfileService(context, authService.Object, _mockLogger.Object);
 
         var account = new Account
         {
@@ -356,7 +363,7 @@ public class UserProfileServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         var authService = new Mock<ISupabaseAuthService>();
-        var service = new UserProfileService(context, authService.Object);
+        var service = new UserProfileService(context, authService.Object, _mockLogger.Object);
 
         var account = new Account
         {
@@ -405,7 +412,7 @@ public class UserProfileServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         var authService = new Mock<ISupabaseAuthService>();
-        var service = new UserProfileService(context, authService.Object);
+        var service = new UserProfileService(context, authService.Object, _mockLogger.Object);
 
         var updateRequest = new UpdateUserProfileRequest
         {
@@ -426,7 +433,7 @@ public class UserProfileServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         var authService = new Mock<ISupabaseAuthService>();
-        var service = new UserProfileService(context, authService.Object);
+        var service = new UserProfileService(context, authService.Object, _mockLogger.Object);
 
         var account = new Account
         {
