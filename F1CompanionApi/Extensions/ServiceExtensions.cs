@@ -22,6 +22,10 @@ public static class ServiceExtensions
             logging.AddConfiguration(builder.Configuration.GetSection("Logging"));
         });
 
+        // Register non-generic ILogger for endpoints (creates logger with "F1CompanionApi.Api.Endpoints" category)
+        builder.Services.AddSingleton(serviceProvider =>
+            serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("F1CompanionApi.Api.Endpoints"));
+
         builder.Services.AddServices(builder.Configuration);
         builder.Services.AddDbContext(builder.Configuration);
 
