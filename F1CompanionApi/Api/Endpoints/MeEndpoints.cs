@@ -116,7 +116,7 @@ public static class MeEndpoints
         ISupabaseAuthService authService,
         IUserProfileService userProfileService,
         UpdateUserProfileRequest updateUserProfileRequest,
-        ILogger logger
+        [FromServices] ILogger logger
     )
     {
         logger.LogInformation("Updating user profile {ProfileId}", updateUserProfileRequest.Id);
