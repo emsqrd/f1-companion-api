@@ -17,17 +17,8 @@ builder.WebHost.UseSentry(options =>
     // Enable structured logging
     options.Experimental.EnableLogs = true;
 
-    // Performance monitoring
-    options.TracesSampleRate = builder.Configuration.GetValue<double>("Sentry:TracesSampleRate");
-
-    // Privacy and data settings
-    options.SendDefaultPii = builder.Configuration.GetValue<bool>("Sentry:SendDefaultPii");
-    // MaxRequestBodySize is configured via MaxRequestBodySize property which takes an enum value
-    var maxBodySize = builder.Configuration["Sentry:MaxRequestBodySize"];
-    if (maxBodySize == "Always")
-    {
-        options.MaxRequestBodySize = Sentry.Extensibility.RequestSize.Always;
-    }
+    // Performance monitoring (can be overridden via Sentry__TracesSampleRate env var)
+    options.TracesSampleRate = builder.Configuration.GetValue<double?>("Sentry:TracesSampleRate") ?? 0.1;
 
     // Filtering callback to exclude server name for privacy
     options.SetBeforeSend((@event, hint) =>
