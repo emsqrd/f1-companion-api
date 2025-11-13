@@ -6,11 +6,7 @@ public class Team : BaseEntity
     public required string Name { get; set; }
     public required string OwnerName { get; set; }
     public int TotalPoints { get; set; }
+    public int UserId { get; set; } // FK
 
-    //TODO: Remove Rank and TotalPoints from here and calculate them on the fly
-    // Navigation properties
-    // public List<Round> Rounds { get; set; } = new();
-
-    // Calculated property
-    // public int TotalPoints => Rounds.Sum(r => r.Points);
+    public UserProfile Owner { get; set; } = null!;
 }

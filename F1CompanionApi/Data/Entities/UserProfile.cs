@@ -15,4 +15,5 @@ public class UserProfile
     //TODO: Remove this when implementing DTOs
     [JsonIgnore]
     public Account Account { get; set; } = null!;
+    public Team? Team { get; set; }
 }

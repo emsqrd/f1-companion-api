@@ -25,15 +25,11 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.Id).HasMaxLength(36); // UUID length
         });
 
-        modelBuilder.Entity<League>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity
-                .HasOne(e => e.Owner)
-                .WithMany()
-                .HasForeignKey(e => e.OwnerId)
-                .OnDelete(DeleteBehavior.Restrict);
-        });
+        modelBuilder.Entity<League>()
+            .HasOne(e => e.Owner)
+            .WithMany()
+            .HasForeignKey(e => e.OwnerId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<UserProfile>(entity =>
         {
@@ -46,6 +42,12 @@ public class ApplicationDbContext : DbContext
                 .HasForeignKey<UserProfile>(e => e.AccountId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
+
+        modelBuilder.Entity<Team>()
+            .HasOne(t => t.Owner)
+            .WithOne(u => u.Team)
+            .HasForeignKey<Team>(t => t.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         // Configure audit trail FK for all entities that inherit from base entity
         ConfigureAuditTrailForeignKeys<Driver>(modelBuilder);
