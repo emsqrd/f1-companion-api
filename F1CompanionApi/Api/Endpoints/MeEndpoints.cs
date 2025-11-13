@@ -1,9 +1,7 @@
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Domain.Services;
 using F1CompanionApi.Extensions;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 
 namespace F1CompanionApi.Api.Endpoints;
 
@@ -35,6 +33,12 @@ public static class MeEndpoints
             .WithName("Get My Leagues")
             .WithOpenApi()
             .WithDescription("Gets leagues owned by the authenticated user")
+            .RequireAuthorization();
+
+        app.MapGet("/me/team", GetMyTeamAsync)
+            .WithName("Get My Team")
+            .WithOpenApi()
+            .WithDescription("Get current user's team or null if none exists")
             .RequireAuthorization();
 
         return app;
@@ -199,5 +203,26 @@ public static class MeEndpoints
             logger.LogError(ex, "Failed to fetch leagues for current user");
             throw;
         }
+    }
+
+    private static async Task<IResult> GetMyTeamAsync(
+        ITeamService teamService,
+        IUserProfileService userProfileService,
+        [FromServices] ILogger logger
+    )
+    {
+        var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
+
+        logger.LogDebug("Fetching team for user {UserId}", user.Id);
+
+        var team = await teamService.GetUserTeamAsync(user.Id);
+
+        if (team is null)
+        {
+            logger.LogWarning("User {UserId} has no team", user.Id);
+            return Results.Ok(null);
+        }
+
+        return Results.Ok(team);
     }
 }

@@ -1,5 +1,7 @@
+using F1CompanionApi.Api.Models;
 using F1CompanionApi.Data;
 using F1CompanionApi.Data.Entities;
+using F1CompanionApi.Domain.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +13,12 @@ public static class TeamEndpoints
 {
     public static IEndpointRouteBuilder MapTeamEndpoints(this IEndpointRouteBuilder app)
     {
+        app.MapPost("/teams", CreateTeamAsync)
+            .RequireAuthorization()
+            .WithName("CreateTeam")
+            .WithOpenApi()
+            .WithDescription("Create a new team for the current user");
+
         app.MapGet("/teams", GetTeams)
             .WithName("GetTeams")
             .WithOpenApi()
@@ -21,9 +29,29 @@ public static class TeamEndpoints
             .WithOpenApi()
             .WithDescription("Get Team By Id");
 
-        //TODO: Add new endpoint for leaderboard that orders teams by TotalPoints and assigns Rank on the fly
-
         return app;
+    }
+
+    private static async Task<IResult> CreateTeamAsync(
+        CreateTeamRequest request,
+        ITeamService teamService,
+        IUserProfileService userProfileService,
+        [FromServices] ILogger logger)
+    {
+        var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
+
+        logger.LogInformation("User {UserId} creating team", user.Id);
+
+        try
+        {
+            var team = await teamService.CreateTeamAsync(request, user.Id);
+            return Results.Created($"/teams/{team.Id}", team);
+        }
+        catch (InvalidOperationException ex)
+        {
+            logger.LogWarning(ex, "Failed to create team for user {UserId}", user.Id);
+            return Results.BadRequest(ex.Message);
+        }
     }
 
     private static async Task<IEnumerable<Team>> GetTeams(

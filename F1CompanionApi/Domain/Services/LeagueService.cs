@@ -70,6 +70,7 @@ public class LeagueService : ILeagueService
         };
     }
 
+    // TODO: Update these endpoints to return LeagueResponseModel instead of League
     public async Task<IEnumerable<League>> GetLeaguesAsync()
     {
         _logger.LogDebug("Fetching all leagues");

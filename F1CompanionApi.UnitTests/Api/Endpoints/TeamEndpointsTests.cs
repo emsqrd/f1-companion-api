@@ -36,24 +36,18 @@ public class TeamEndpointsTests
         {
             new Team
             {
+                Id = 1,
                 Name = "Team Alpha",
-                OwnerName = "John Doe",
-                Rank = 1,
-                TotalPoints = 100
             },
             new Team
             {
+                Id = 2,
                 Name = "Team Beta",
-                OwnerName = "Jane Smith",
-                Rank = 2,
-                TotalPoints = 85
             },
             new Team
             {
+                Id = 3,
                 Name = "Team Gamma",
-                OwnerName = "Bob Johnson",
-                Rank = 3,
-                TotalPoints = 70
             }
         };
 
@@ -79,10 +73,8 @@ public class TeamEndpointsTests
         using var context = CreateInMemoryContext();
         var team = new Team
         {
+            Id = 1,
             Name = "Findable Team",
-            OwnerName = "Team Owner",
-            Rank = 1,
-            TotalPoints = 200
         };
 
         context.Teams.Add(team);
@@ -96,9 +88,6 @@ public class TeamEndpointsTests
         var okResult = (Ok<Team>)result;
         Assert.Equal(team.Id, okResult.Value!.Id);
         Assert.Equal("Findable Team", okResult.Value.Name);
-        Assert.Equal("Team Owner", okResult.Value.OwnerName);
-        Assert.Equal(1, okResult.Value.Rank);
-        Assert.Equal(200, okResult.Value.TotalPoints);
     }
 
     [Fact]
