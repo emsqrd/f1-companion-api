@@ -43,11 +43,15 @@ public class ApplicationDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<Team>()
-            .HasOne(t => t.Owner)
-            .WithOne(u => u.Team)
-            .HasForeignKey<Team>(t => t.UserId)
-            .OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<Team>(entity =>
+        {
+            entity.HasIndex(e => e.UserId).IsUnique();
+            entity
+                .HasOne(e => e.Owner)
+                .WithOne(u => u.Team)
+                .HasForeignKey<Team>(e => e.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
 
         // Configure audit trail FK for all entities that inherit from base entity
         ConfigureAuditTrailForeignKeys<Driver>(modelBuilder);
