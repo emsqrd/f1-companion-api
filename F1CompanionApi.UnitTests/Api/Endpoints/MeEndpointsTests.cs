@@ -14,6 +14,7 @@ public class MeEndpointsTests
     private readonly Mock<ISupabaseAuthService> _mockAuthService;
     private readonly Mock<IUserProfileService> _mockUserProfileService;
     private readonly Mock<ILeagueService> _mockLeagueService;
+    private readonly Mock<ITeamService> _mockTeamService;
     private readonly Mock<HttpContext> _mockHttpContext;
     private readonly Mock<ILogger> _mockLogger;
 
@@ -22,6 +23,7 @@ public class MeEndpointsTests
         _mockAuthService = new Mock<ISupabaseAuthService>();
         _mockUserProfileService = new Mock<IUserProfileService>();
         _mockLeagueService = new Mock<ILeagueService>();
+        _mockTeamService = new Mock<ITeamService>();
         _mockHttpContext = new Mock<HttpContext>();
         _mockLogger = new Mock<ILogger>();
     }
@@ -310,6 +312,72 @@ public class MeEndpointsTests
         Assert.Equal(StatusCodes.Status400BadRequest, problemResult.StatusCode);
     }
 
+    [Fact]
+    public async Task GetMyTeamAsync_UserHasTeam_ReturnsOkWithTeam()
+    {
+        // Arrange
+        var user = new UserProfile
+        {
+            Id = 1,
+            AccountId = "test-account",
+            Email = "user@test.com",
+            FirstName = "John",
+            LastName = "Doe"
+        };
+
+        var teamResponse = new TeamResponseModel
+        {
+            Id = 1,
+            Name = "My Team",
+            OwnerName = "John Doe"
+        };
+
+        _mockUserProfileService
+            .Setup(x => x.GetRequiredCurrentUserProfileAsync())
+            .ReturnsAsync(user);
+
+        _mockTeamService
+            .Setup(x => x.GetUserTeamAsync(user.Id))
+            .ReturnsAsync(teamResponse);
+
+        // Act
+        var result = await InvokeGetMyTeamAsync();
+
+        // Assert
+        Assert.IsType<Ok<TeamResponseModel>>(result);
+        var okResult = (Ok<TeamResponseModel>)result;
+        Assert.Equal(teamResponse, okResult.Value);
+        Assert.Equal("My Team", okResult.Value!.Name);
+    }
+
+    [Fact]
+    public async Task GetMyTeamAsync_UserHasNoTeam_ReturnsOkWithNull()
+    {
+        // Arrange
+        var user = new UserProfile
+        {
+            Id = 1,
+            AccountId = "test-account",
+            Email = "user@test.com",
+            FirstName = "John",
+            LastName = "Doe"
+        };
+
+        _mockUserProfileService
+            .Setup(x => x.GetRequiredCurrentUserProfileAsync())
+            .ReturnsAsync(user);
+
+        _mockTeamService
+            .Setup(x => x.GetUserTeamAsync(user.Id))
+            .ReturnsAsync((TeamResponseModel?)null);
+
+        // Act
+        var result = await InvokeGetMyTeamAsync();
+
+        // Assert
+        Assert.IsType<Ok>(result);
+    }
+
     // Helper methods to invoke private endpoint methods via reflection
     private async Task<IResult> InvokeRegisterUserAsync(MeEndpoints.RegisterUserRequest request)
     {
@@ -370,6 +438,26 @@ public class MeEndpointsTests
             {
                 _mockUserProfileService.Object,
                 _mockLeagueService.Object,
+                _mockLogger.Object
+            }
+        )!;
+
+        return await task;
+    }
+
+    private async Task<IResult> InvokeGetMyTeamAsync()
+    {
+        var method = typeof(MeEndpoints).GetMethod(
+            "GetMyTeamAsync",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
+        );
+
+        var task = (Task<IResult>)method!.Invoke(
+            null,
+            new object[]
+            {
+                _mockTeamService.Object,
+                _mockUserProfileService.Object,
                 _mockLogger.Object
             }
         )!;
