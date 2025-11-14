@@ -1,6 +1,8 @@
 using F1CompanionApi.Api.Endpoints;
+using F1CompanionApi.Api.Models;
 using F1CompanionApi.Data;
 using F1CompanionApi.Data.Entities;
+using F1CompanionApi.Domain.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
@@ -12,10 +14,14 @@ namespace F1CompanionApi.UnitTests.Api.Endpoints;
 public class TeamEndpointsTests
 {
     private readonly Mock<ILogger> _mockLogger;
+    private readonly Mock<ITeamService> _mockTeamService;
+    private readonly Mock<IUserProfileService> _mockUserProfileService;
 
     public TeamEndpointsTests()
     {
         _mockLogger = new Mock<ILogger>();
+        _mockTeamService = new Mock<ITeamService>();
+        _mockUserProfileService = new Mock<IUserProfileService>();
     }
 
     private ApplicationDbContext CreateInMemoryContext()
@@ -103,6 +109,119 @@ public class TeamEndpointsTests
         Assert.IsType<ProblemHttpResult>(result);
     }
 
+    [Fact]
+    public async Task CreateTeamAsync_ValidRequest_ReturnsCreatedWithTeam()
+    {
+        // Arrange
+        var user = new UserProfile
+        {
+            Id = 1,
+            AccountId = "test-account",
+            Email = "user@test.com",
+            FirstName = "John",
+            LastName = "Doe"
+        };
+
+        var request = new CreateTeamRequest
+        {
+            Name = "Test Team"
+        };
+
+        var teamResponse = new TeamResponseModel
+        {
+            Id = 1,
+            Name = "Test Team",
+            OwnerName = "John Doe"
+        };
+
+        _mockUserProfileService
+            .Setup(x => x.GetRequiredCurrentUserProfileAsync())
+            .ReturnsAsync(user);
+
+        _mockTeamService
+            .Setup(x => x.CreateTeamAsync(request, user.Id))
+            .ReturnsAsync(teamResponse);
+
+        // Act
+        var result = await InvokeCreateTeamAsync(request);
+
+        // Assert
+        Assert.IsType<Created<TeamResponseModel>>(result);
+        var createdResult = (Created<TeamResponseModel>)result;
+        Assert.Equal($"/teams/{teamResponse.Id}", createdResult.Location);
+        Assert.Equal(teamResponse, createdResult.Value);
+    }
+
+    [Fact]
+    public async Task CreateTeamAsync_UserAlreadyHasTeam_ReturnsBadRequest()
+    {
+        // Arrange
+        var user = new UserProfile
+        {
+            Id = 1,
+            AccountId = "test-account",
+            Email = "user@test.com",
+            FirstName = "John",
+            LastName = "Doe"
+        };
+
+        var request = new CreateTeamRequest
+        {
+            Name = "Test Team"
+        };
+
+        _mockUserProfileService
+            .Setup(x => x.GetRequiredCurrentUserProfileAsync())
+            .ReturnsAsync(user);
+
+        _mockTeamService
+            .Setup(x => x.CreateTeamAsync(request, user.Id))
+            .ThrowsAsync(new InvalidOperationException("User already has a team"));
+
+        // Act
+        var result = await InvokeCreateTeamAsync(request);
+
+        // Assert
+        Assert.IsType<BadRequest<string>>(result);
+        var badRequestResult = (BadRequest<string>)result;
+        Assert.Equal("User already has a team", badRequestResult.Value);
+    }
+
+    [Fact]
+    public async Task CreateTeamAsync_UserNotFound_ReturnsBadRequest()
+    {
+        // Arrange
+        var user = new UserProfile
+        {
+            Id = 1,
+            AccountId = "test-account",
+            Email = "user@test.com",
+            FirstName = "John",
+            LastName = "Doe"
+        };
+
+        var request = new CreateTeamRequest
+        {
+            Name = "Test Team"
+        };
+
+        _mockUserProfileService
+            .Setup(x => x.GetRequiredCurrentUserProfileAsync())
+            .ReturnsAsync(user);
+
+        _mockTeamService
+            .Setup(x => x.CreateTeamAsync(request, user.Id))
+            .ThrowsAsync(new InvalidOperationException("User not found"));
+
+        // Act
+        var result = await InvokeCreateTeamAsync(request);
+
+        // Assert
+        Assert.IsType<BadRequest<string>>(result);
+        var badRequestResult = (BadRequest<string>)result;
+        Assert.Equal("User not found", badRequestResult.Value);
+    }
+
     // Helper methods to invoke private endpoint methods via reflection
     private async Task<IEnumerable<Team>> InvokeGetTeams(ApplicationDbContext db)
     {
@@ -129,6 +248,27 @@ public class TeamEndpointsTests
         var task = (Task<IResult>)method!.Invoke(
             null,
             new object[] { id, db, _mockLogger.Object }
+        )!;
+
+        return await task;
+    }
+
+    private async Task<IResult> InvokeCreateTeamAsync(CreateTeamRequest request)
+    {
+        var method = typeof(TeamEndpoints).GetMethod(
+            "CreateTeamAsync",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
+        );
+
+        var task = (Task<IResult>)method!.Invoke(
+            null,
+            new object[]
+            {
+                request,
+                _mockTeamService.Object,
+                _mockUserProfileService.Object,
+                _mockLogger.Object
+            }
         )!;
 
         return await task;

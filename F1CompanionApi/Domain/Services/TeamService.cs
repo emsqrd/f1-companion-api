@@ -63,7 +63,7 @@ public class TeamService : ITeamService
         {
             Id = team.Id,
             Name = team.Name,
-            OwnerName = team.Owner.GetFullName(),
+            OwnerName = user.GetFullName(),
         };
     }
 
