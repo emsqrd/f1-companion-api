@@ -215,31 +215,25 @@ public class MeEndpointsTests
             LastName = "Doe"
         };
 
-        var leagues = new List<League>
+        var leagues = new List<LeagueResponseModel>
         {
-            new League
+            new LeagueResponseModel
             {
                 Id = 1,
                 Name = "League 1",
                 Description = "Description 1",
-                OwnerId = userProfile.Id,
-                Owner = userProfile,
+                OwnerName = "John Doe",
                 MaxTeams = 15,
-                IsPrivate = true,
-                CreatedBy = userProfile.Id,
-                CreatedAt = DateTime.UtcNow
+                IsPrivate = true
             },
-            new League
+            new LeagueResponseModel
             {
                 Id = 2,
                 Name = "League 2",
                 Description = "Description 2",
-                OwnerId = userProfile.Id,
-                Owner = userProfile,
+                OwnerName = "John Doe",
                 MaxTeams = 20,
-                IsPrivate = false,
-                CreatedBy = userProfile.Id,
-                CreatedAt = DateTime.UtcNow
+                IsPrivate = false
             }
         };
 
@@ -283,7 +277,7 @@ public class MeEndpointsTests
 
         _mockLeagueService
             .Setup(x => x.GetLeaguesByOwnerIdAsync(userProfile.Id))
-            .ReturnsAsync(new List<League>());
+            .ReturnsAsync(new List<LeagueResponseModel>());
 
         // Act
         var result = await InvokeGetMyLeaguesAsync();

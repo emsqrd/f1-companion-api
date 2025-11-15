@@ -1,6 +1,5 @@
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Domain.Services;
-using F1CompanionApi.Extensions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace F1CompanionApi.Api.Endpoints;
@@ -175,20 +174,11 @@ public static class MeEndpoints
         {
             var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
             var leagues = await leagueService.GetLeaguesByOwnerIdAsync(user.Id);
+            var leagueList = leagues.ToList();
 
-            var leagueResponses = leagues.Select(league => new LeagueResponseModel
-            {
-                Id = league.Id,
-                Name = league.Name,
-                Description = league.Description,
-                OwnerName = league.Owner.GetFullName(),
-                MaxTeams = league.MaxTeams,
-                IsPrivate = league.IsPrivate,
-            }).ToList();
+            logger.LogDebug("Retrieved {LeagueCount} leagues for current user", leagueList.Count);
 
-            logger.LogDebug("Retrieved {LeagueCount} leagues for current user", leagueResponses.Count);
-
-            return Results.Ok(leagueResponses);
+            return Results.Ok(leagueList);
         }
         catch (InvalidOperationException ex)
         {

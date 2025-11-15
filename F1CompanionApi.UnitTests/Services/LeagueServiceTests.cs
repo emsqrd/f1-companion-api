@@ -169,7 +169,10 @@ public class LeagueServiceTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(2, result.Count());
+        var leagueList = result.ToList();
+        Assert.Equal(2, leagueList.Count);
+        Assert.Equal("League 1", leagueList[0].Name);
+        Assert.Equal("Test Owner", leagueList[0].OwnerName);
     }
 
     [Fact]
@@ -206,6 +209,7 @@ public class LeagueServiceTests
         Assert.NotNull(result);
         Assert.Equal("Test League", result.Name);
         Assert.Equal("Test Description", result.Description);
+        Assert.Equal("Test Owner", result.OwnerName);
     }
 
     [Fact]
@@ -270,6 +274,7 @@ public class LeagueServiceTests
         Assert.NotNull(result);
         Assert.Single(result);
         Assert.Equal("Owner 1 League", result.First().Name);
+        Assert.Equal("Owner One", result.First().OwnerName);
     }
 
     [Fact]

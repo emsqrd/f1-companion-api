@@ -13,9 +13,9 @@ public interface ILeagueService
         CreateLeagueRequest createLeagueRequest,
         int ownerId
     );
-    Task<IEnumerable<League>> GetLeaguesAsync();
-    Task<League?> GetLeagueByIdAsync(int id);
-    Task<IEnumerable<League>> GetLeaguesByOwnerIdAsync(int ownerId);
+    Task<IEnumerable<LeagueResponseModel>> GetLeaguesAsync();
+    Task<LeagueResponseModel?> GetLeagueByIdAsync(int id);
+    Task<IEnumerable<LeagueResponseModel>> GetLeaguesByOwnerIdAsync(int ownerId);
 }
 
 public class LeagueService : ILeagueService
@@ -70,16 +70,15 @@ public class LeagueService : ILeagueService
         };
     }
 
-    // TODO: Update these endpoints to return LeagueResponseModel instead of League
-    public async Task<IEnumerable<League>> GetLeaguesAsync()
+    public async Task<IEnumerable<LeagueResponseModel>> GetLeaguesAsync()
     {
         _logger.LogDebug("Fetching all leagues");
         var leagues = await _dbContext.Leagues.Include(x => x.Owner).ToListAsync();
         _logger.LogDebug("Retrieved {LeagueCount} leagues", leagues.Count);
-        return leagues;
+        return leagues.Select(MapToResponseModel);
     }
 
-    public async Task<League?> GetLeagueByIdAsync(int id)
+    public async Task<LeagueResponseModel?> GetLeagueByIdAsync(int id)
     {
         _logger.LogDebug("Fetching league {LeagueId}", id);
         var league = await _dbContext.Leagues.Include(x => x.Owner).FirstOrDefaultAsync(x => x.Id == id);
@@ -87,12 +86,13 @@ public class LeagueService : ILeagueService
         if (league is null)
         {
             _logger.LogWarning("League {LeagueId} not found", id);
+            return null;
         }
 
-        return league;
+        return MapToResponseModel(league);
     }
 
-    public async Task<IEnumerable<League>> GetLeaguesByOwnerIdAsync(int ownerId)
+    public async Task<IEnumerable<LeagueResponseModel>> GetLeaguesByOwnerIdAsync(int ownerId)
     {
         _logger.LogDebug("Fetching leagues for owner {OwnerId}", ownerId);
         var leagues = await _dbContext.Leagues
@@ -100,6 +100,19 @@ public class LeagueService : ILeagueService
             .Where(x => x.OwnerId == ownerId)
             .ToListAsync();
         _logger.LogDebug("Retrieved {LeagueCount} leagues for owner {OwnerId}", leagues.Count, ownerId);
-        return leagues;
+        return leagues.Select(MapToResponseModel);
+    }
+
+    private static LeagueResponseModel MapToResponseModel(League league)
+    {
+        return new LeagueResponseModel
+        {
+            Id = league.Id,
+            Name = league.Name,
+            Description = league.Description,
+            OwnerName = league.Owner.GetFullName(),
+            MaxTeams = league.MaxTeams,
+            IsPrivate = league.IsPrivate,
+        };
     }
 }

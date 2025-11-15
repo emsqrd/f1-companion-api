@@ -99,39 +99,24 @@ public class LeagueEndpointsTests
     public async Task GetLeaguesAsync_LeaguesExist_ReturnsOkWithLeagues()
     {
         // Arrange
-        var owner = new UserProfile
+        var leagues = new List<LeagueResponseModel>
         {
-            Id = 1,
-            AccountId = "test-account",
-            Email = "owner@test.com",
-            FirstName = "John",
-            LastName = "Doe"
-        };
-
-        var leagues = new List<League>
-        {
-            new League
+            new LeagueResponseModel
             {
                 Id = 1,
                 Name = "League 1",
                 Description = "Description 1",
-                OwnerId = owner.Id,
-                Owner = owner,
+                OwnerName = "John Doe",
                 MaxTeams = 15,
-                IsPrivate = true,
-                CreatedBy = owner.Id,
-                CreatedAt = DateTime.UtcNow
+                IsPrivate = true
             },
-            new League
+            new LeagueResponseModel
             {
                 Id = 2,
                 Name = "League 2",
-                OwnerId = owner.Id,
-                Owner = owner,
+                OwnerName = "John Doe",
                 MaxTeams = 20,
-                IsPrivate = false,
-                CreatedBy = owner.Id,
-                CreatedAt = DateTime.UtcNow
+                IsPrivate = false
             }
         };
 
@@ -158,25 +143,7 @@ public class LeagueEndpointsTests
         // Arrange
         _mockLeagueService
             .Setup(x => x.GetLeaguesAsync())
-            .ReturnsAsync(new List<League>());
-
-        // Act
-        var result = await InvokeGetLeaguesAsync();
-
-        // Assert
-        Assert.IsType<Ok<IEnumerable<LeagueResponseModel>>>(result);
-        var okResult = (Ok<IEnumerable<LeagueResponseModel>>)result;
-        Assert.NotNull(okResult.Value);
-        Assert.Empty(okResult.Value);
-    }
-
-    [Fact]
-    public async Task GetLeaguesAsync_ServiceReturnsNull_ReturnsOkWithEmptyCollection()
-    {
-        // Arrange
-        _mockLeagueService
-            .Setup(x => x.GetLeaguesAsync())
-            .ReturnsAsync((IEnumerable<League>?)null!);
+            .ReturnsAsync(new List<LeagueResponseModel>());
 
         // Act
         var result = await InvokeGetLeaguesAsync();
@@ -192,26 +159,14 @@ public class LeagueEndpointsTests
     public async Task GetLeagueByIdAsync_LeagueExists_ReturnsOkWithLeague()
     {
         // Arrange
-        var owner = new UserProfile
-        {
-            Id = 1,
-            AccountId = "test-account",
-            Email = "owner@test.com",
-            FirstName = "John",
-            LastName = "Doe"
-        };
-
-        var league = new League
+        var league = new LeagueResponseModel
         {
             Id = 1,
             Name = "Test League",
             Description = "Test Description",
-            OwnerId = owner.Id,
-            Owner = owner,
+            OwnerName = "John Doe",
             MaxTeams = 15,
-            IsPrivate = true,
-            CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            IsPrivate = true
         };
 
         _mockLeagueService
@@ -236,7 +191,7 @@ public class LeagueEndpointsTests
         // Arrange
         _mockLeagueService
             .Setup(x => x.GetLeagueByIdAsync(999))
-            .ReturnsAsync((League?)null);
+            .ReturnsAsync((LeagueResponseModel?)null);
 
         // Act
         var result = await InvokeGetLeagueByIdAsync(999);

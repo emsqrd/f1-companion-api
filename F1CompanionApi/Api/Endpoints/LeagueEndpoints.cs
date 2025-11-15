@@ -1,6 +1,5 @@
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Domain.Services;
-using F1CompanionApi.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -76,18 +75,7 @@ public static class LeagueEndpoints
     {
         logger.LogDebug("Fetching all leagues");
         var leagues = await leagueService.GetLeaguesAsync();
-
-        var leagueResponses = leagues?.Select(league => new LeagueResponseModel
-        {
-            Id = league.Id,
-            Name = league.Name,
-            Description = league.Description,
-            OwnerName = league.Owner.GetFullName(),
-            MaxTeams = league.MaxTeams,
-            IsPrivate = league.IsPrivate,
-        }) ?? [];
-
-        return Results.Ok(leagueResponses);
+        return Results.Ok(leagues);
     }
 
     private static async Task<IResult> GetLeagueByIdAsync(
@@ -108,16 +96,6 @@ public static class LeagueEndpoints
             );
         }
 
-        var leagueResponse = new LeagueResponseModel
-        {
-            Id = league.Id,
-            Name = league.Name,
-            Description = league.Description,
-            OwnerName = league.Owner.GetFullName(),
-            MaxTeams = league.MaxTeams,
-            IsPrivate = league.IsPrivate,
-        };
-
-        return Results.Ok(leagueResponse);
+        return Results.Ok(league);
     }
 }
