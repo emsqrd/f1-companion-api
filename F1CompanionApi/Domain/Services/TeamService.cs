@@ -71,7 +71,9 @@ public class TeamService : ITeamService
     {
         _logger.LogDebug("Fetching team for user {UserId}", userId);
 
-        var team = await _dbContext.Teams.FirstOrDefaultAsync(t => t.UserId == userId);
+        var team = await _dbContext.Teams
+            .Include(t => t.Owner)
+            .FirstOrDefaultAsync(t => t.UserId == userId);
 
         if (team is null)
         {
