@@ -77,7 +77,7 @@ public static class LeagueEndpoints
         logger.LogDebug("Fetching all leagues");
         var leagues = await leagueService.GetLeaguesAsync();
 
-        var leagueResponses = leagues?.Select(league => new LeagueResponseModel
+        var leagueResponses = leagues?.Select(league => new LeagueResponse
         {
             Id = league.Id,
             Name = league.Name,
@@ -108,7 +108,7 @@ public static class LeagueEndpoints
             );
         }
 
-        var leagueResponse = new LeagueResponseModel
+        var leagueResponse = new LeagueResponse
         {
             Id = league.Id,
             Name = league.Name,

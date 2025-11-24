@@ -43,6 +43,7 @@ builder.WebHost.UseSentry(options =>
 });
 
 builder.Services.AddOpenApi();
+builder.Services.AddProblemDetails();
 
 builder.AddApplicationServices();
 

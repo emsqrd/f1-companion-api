@@ -127,7 +127,7 @@ public class TeamEndpointsTests
             Name = "Test Team"
         };
 
-        var teamResponse = new TeamResponseModel
+        var teamResponse = new TeamResponse
         {
             Id = 1,
             Name = "Test Team",
@@ -146,8 +146,8 @@ public class TeamEndpointsTests
         var result = await InvokeCreateTeamAsync(request);
 
         // Assert
-        Assert.IsType<Created<TeamResponseModel>>(result);
-        var createdResult = (Created<TeamResponseModel>)result;
+        Assert.IsType<Created<TeamResponse>>(result);
+        var createdResult = (Created<TeamResponse>)result;
         Assert.Equal($"/teams/{teamResponse.Id}", createdResult.Location);
         Assert.Equal(teamResponse, createdResult.Value);
     }

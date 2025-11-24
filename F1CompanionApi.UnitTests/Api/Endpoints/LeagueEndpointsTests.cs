@@ -45,7 +45,7 @@ public class LeagueEndpointsTests
             Description = "Test Description"
         };
 
-        var expectedResponse = new LeagueResponseModel
+        var expectedResponse = new LeagueResponse
         {
             Id = 1,
             Name = "Test League",
@@ -67,8 +67,8 @@ public class LeagueEndpointsTests
         var result = await InvokeCreateLeagueAsync(request);
 
         // Assert
-        Assert.IsType<Created<LeagueResponseModel>>(result);
-        var createdResult = (Created<LeagueResponseModel>)result;
+        Assert.IsType<Created<LeagueResponse>>(result);
+        var createdResult = (Created<LeagueResponse>)result;
         Assert.Equal("/leagues/1", createdResult.Location);
         Assert.Equal(expectedResponse, createdResult.Value);
     }
@@ -143,8 +143,8 @@ public class LeagueEndpointsTests
         var result = await InvokeGetLeaguesAsync();
 
         // Assert
-        Assert.IsType<Ok<IEnumerable<LeagueResponseModel>>>(result);
-        var okResult = (Ok<IEnumerable<LeagueResponseModel>>)result;
+        Assert.IsType<Ok<IEnumerable<LeagueResponse>>>(result);
+        var okResult = (Ok<IEnumerable<LeagueResponse>>)result;
         Assert.NotNull(okResult.Value);
         var leagueList = okResult.Value.ToList();
         Assert.Equal(2, leagueList.Count);
@@ -164,8 +164,8 @@ public class LeagueEndpointsTests
         var result = await InvokeGetLeaguesAsync();
 
         // Assert
-        Assert.IsType<Ok<IEnumerable<LeagueResponseModel>>>(result);
-        var okResult = (Ok<IEnumerable<LeagueResponseModel>>)result;
+        Assert.IsType<Ok<IEnumerable<LeagueResponse>>>(result);
+        var okResult = (Ok<IEnumerable<LeagueResponse>>)result;
         Assert.NotNull(okResult.Value);
         Assert.Empty(okResult.Value);
     }
@@ -182,8 +182,8 @@ public class LeagueEndpointsTests
         var result = await InvokeGetLeaguesAsync();
 
         // Assert
-        Assert.IsType<Ok<IEnumerable<LeagueResponseModel>>>(result);
-        var okResult = (Ok<IEnumerable<LeagueResponseModel>>)result;
+        Assert.IsType<Ok<IEnumerable<LeagueResponse>>>(result);
+        var okResult = (Ok<IEnumerable<LeagueResponse>>)result;
         Assert.NotNull(okResult.Value);
         Assert.Empty(okResult.Value);
     }
@@ -222,8 +222,8 @@ public class LeagueEndpointsTests
         var result = await InvokeGetLeagueByIdAsync(1);
 
         // Assert
-        Assert.IsType<Ok<LeagueResponseModel>>(result);
-        var okResult = (Ok<LeagueResponseModel>)result;
+        Assert.IsType<Ok<LeagueResponse>>(result);
+        var okResult = (Ok<LeagueResponse>)result;
         Assert.NotNull(okResult.Value);
         Assert.Equal(1, okResult.Value.Id);
         Assert.Equal("Test League", okResult.Value.Name);

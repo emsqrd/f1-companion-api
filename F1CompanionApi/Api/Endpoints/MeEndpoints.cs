@@ -176,7 +176,7 @@ public static class MeEndpoints
             var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
             var leagues = await leagueService.GetLeaguesByOwnerIdAsync(user.Id);
 
-            var leagueResponses = leagues.Select(league => new LeagueResponseModel
+            var leagueResponses = leagues.Select(league => new LeagueResponse
             {
                 Id = league.Id,
                 Name = league.Name,

@@ -255,8 +255,8 @@ public class MeEndpointsTests
         var result = await InvokeGetMyLeaguesAsync();
 
         // Assert
-        Assert.IsType<Ok<List<LeagueResponseModel>>>(result);
-        var okResult = (Ok<List<LeagueResponseModel>>)result;
+        Assert.IsType<Ok<List<LeagueResponse>>>(result);
+        var okResult = (Ok<List<LeagueResponse>>)result;
         Assert.Equal(2, okResult.Value!.Count);
         Assert.Equal("League 1", okResult.Value[0].Name);
         Assert.Equal("John Doe", okResult.Value[0].OwnerName);
@@ -289,8 +289,8 @@ public class MeEndpointsTests
         var result = await InvokeGetMyLeaguesAsync();
 
         // Assert
-        Assert.IsType<Ok<List<LeagueResponseModel>>>(result);
-        var okResult = (Ok<List<LeagueResponseModel>>)result;
+        Assert.IsType<Ok<List<LeagueResponse>>>(result);
+        var okResult = (Ok<List<LeagueResponse>>)result;
         Assert.NotNull(okResult.Value);
         Assert.Empty(okResult.Value);
     }
@@ -325,7 +325,7 @@ public class MeEndpointsTests
             LastName = "Doe"
         };
 
-        var teamResponse = new TeamResponseModel
+        var teamResponse = new TeamResponse
         {
             Id = 1,
             Name = "My Team",
@@ -344,8 +344,8 @@ public class MeEndpointsTests
         var result = await InvokeGetMyTeamAsync();
 
         // Assert
-        Assert.IsType<Ok<TeamResponseModel>>(result);
-        var okResult = (Ok<TeamResponseModel>)result;
+        Assert.IsType<Ok<TeamResponse>>(result);
+        var okResult = (Ok<TeamResponse>)result;
         Assert.Equal(teamResponse, okResult.Value);
         Assert.Equal("My Team", okResult.Value!.Name);
     }
@@ -369,7 +369,7 @@ public class MeEndpointsTests
 
         _mockTeamService
             .Setup(x => x.GetUserTeamAsync(user.Id))
-            .ReturnsAsync((TeamResponseModel?)null);
+            .ReturnsAsync((TeamResponse?)null);
 
         // Act
         var result = await InvokeGetMyTeamAsync();

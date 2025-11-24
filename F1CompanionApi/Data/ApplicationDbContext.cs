@@ -10,6 +10,7 @@ public class ApplicationDbContext : DbContext
 
     // Add your DbSets here
     public DbSet<Account> Accounts => Set<Account>();
+    public DbSet<Constructor> Constructors => Set<Constructor>();
     public DbSet<Driver> Drivers => Set<Driver>();
     public DbSet<League> Leagues => Set<League>();
     public DbSet<Team> Teams => Set<Team>();
@@ -54,6 +55,7 @@ public class ApplicationDbContext : DbContext
         });
 
         // Configure audit trail FK for all entities that inherit from base entity
+        ConfigureAuditTrailForeignKeys<Constructor>(modelBuilder);
         ConfigureAuditTrailForeignKeys<Driver>(modelBuilder);
         ConfigureAuditTrailForeignKeys<League>(modelBuilder);
         ConfigureAuditTrailForeignKeys<Team>(modelBuilder);
