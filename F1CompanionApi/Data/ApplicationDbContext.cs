@@ -54,17 +54,15 @@ public class ApplicationDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
-        // Configure audit trail FK for all entities that inherit from base entity
-        ConfigureAuditTrailForeignKeys<Constructor>(modelBuilder);
-        ConfigureAuditTrailForeignKeys<Driver>(modelBuilder);
+        // Configure audit trail FK for user-owned entities only
         ConfigureAuditTrailForeignKeys<League>(modelBuilder);
         ConfigureAuditTrailForeignKeys<Team>(modelBuilder);
     }
 
     private void ConfigureAuditTrailForeignKeys<T>(ModelBuilder modelBuilder)
-        where T : BaseEntity
+        where T : UserOwnedEntity
     {
-        // Configure foreign key relationships
+        // Configure foreign key relationships for user-owned entities
         modelBuilder
             .Entity<T>()
             .HasOne(e => e.CreatedByUser)
