@@ -1,9 +1,7 @@
 using F1CompanionApi.Api.Mappers;
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Data;
-using F1CompanionApi.Data.Entities;
 using Microsoft.EntityFrameworkCore;
-using Npgsql.Replication;
 
 namespace F1CompanionApi.Domain.Services;
 
