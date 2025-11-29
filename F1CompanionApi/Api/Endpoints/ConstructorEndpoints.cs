@@ -1,4 +1,4 @@
-using System;
+using System.ComponentModel;
 using F1CompanionApi.Domain.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,7 +12,7 @@ public static class ConstructorEndpoints
             .RequireAuthorization()
             .WithName("GetConstructors")
             .WithOpenApi()
-            .WithDescription("Retrieves a list of all constructors");
+            .WithDescription("Retrieves a list of constructors");
 
         app.MapGet("/constructors/{id}", GetConstructorByIdAsync)
             .RequireAuthorization()
@@ -25,11 +25,12 @@ public static class ConstructorEndpoints
 
     private static async Task<IResult> GetConstructorsAsync(
         IConstructorService constructorService,
+        [FromQuery][Description("Filter to active constructors only")] bool? activeOnly,
         [FromServices] ILogger logger)
     {
         logger.LogDebug("Fetching all constructors");
 
-        var constructors = await constructorService.GetConstructorsAsync();
+        var constructors = await constructorService.GetConstructorsAsync(activeOnly);
 
         return Results.Ok(constructors);
     }

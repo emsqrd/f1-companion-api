@@ -7,7 +7,7 @@ namespace F1CompanionApi.Domain.Services;
 
 public interface IConstructorService
 {
-    Task<IEnumerable<ConstructorResponse>> GetConstructorsAsync();
+    Task<IEnumerable<ConstructorResponse>> GetConstructorsAsync(bool? activeOnly);
     Task<ConstructorResponse?> GetConstructorByIdAsync(int id);
 }
 
@@ -22,9 +22,18 @@ public class ConstructorService : IConstructorService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<IEnumerable<ConstructorResponse>> GetConstructorsAsync()
+    public async Task<IEnumerable<ConstructorResponse>> GetConstructorsAsync(bool? activeOnly)
     {
-        var constructors = await _dbContext.Constructors.ToListAsync();
+        var query = _dbContext.Constructors.AsQueryable();
+
+        if (activeOnly is not null)
+        {
+            query = query.Where(constructor => constructor.IsActive == activeOnly);
+        }
+
+        var constructors = await query
+            .OrderBy(x => x.Name)
+            .ToListAsync();
 
         _logger.LogDebug("Retrieved {ConstructorCount} constructors", constructors.Count);
 

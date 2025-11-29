@@ -1,6 +1,5 @@
-using System;
+using System.ComponentModel;
 using F1CompanionApi.Domain.Services;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
 namespace F1CompanionApi.Api.Endpoints;
@@ -13,7 +12,7 @@ public static class DriverEndpoints
             .RequireAuthorization()
             .WithName("GetDrivers")
             .WithOpenApi()
-            .WithDescription("Retrieves a list of all drivers");
+            .WithDescription("Retrieves a list of drivers");
 
         app.MapGet("/drivers/{id}", GetDriverByIdAsync)
             .RequireAuthorization()
@@ -26,11 +25,12 @@ public static class DriverEndpoints
 
     private static async Task<IResult> GetDriversAsync(
         IDriverService driverService,
+        [FromQuery][Description("Filter to active drivers only")] bool? activeOnly,
         [FromServices] ILogger logger)
     {
         logger.LogDebug("Fetching all drivers");
 
-        var drivers = await driverService.GetDriversAsync();
+        var drivers = await driverService.GetDriversAsync(activeOnly);
 
         return Results.Ok(drivers);
     }
