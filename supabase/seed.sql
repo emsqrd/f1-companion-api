@@ -8,7 +8,7 @@ VALUES
   
   -- Mercedes
   ('George', 'Russell', 'RUS', 'GBR', true, false, NOW(), NOW(), NULL),
-  ('Andrea Kimi', 'Antonelli', 'ANT', 'ITA', true, false, NOW(), NOW(), NULL),
+  ('Kimi', 'Antonelli', 'ANT', 'ITA', true, false, NOW(), NOW(), NULL),
   
   -- Ferrari
   ('Charles', 'Leclerc', 'LEC', 'MON', true, false, NOW(), NOW(), NULL),
@@ -54,7 +54,7 @@ VALUES
   ('Aston Martin', 'Aston Martin Aramco F1 Team', 'GBR', true, false, NOW(), NOW(), NULL),
   ('Alpine', 'BWT Alpine F1 Team', 'FRA', true, false, NOW(), NOW(), NULL),
   ('Williams', 'Williams Racing', 'GBR', true, false, NOW(), NOW(), NULL),
-  ('RB', 'Visa Cash App RB F1 Team', 'ITA', true, false, NOW(), NOW(), NULL),
+  ('Racing Bulls', 'Visa Cash App RB F1 Team', 'ITA', true, false, NOW(), NOW(), NULL),
   ('Kick Sauber', 'Stake F1 Team Kick Sauber', 'SUI', true, false, NOW(), NOW(), NULL),
   ('Haas', 'MoneyGram Haas F1 Team', 'USA', true, false, NOW(), NOW(), NULL)
 ON CONFLICT DO NOTHING;
