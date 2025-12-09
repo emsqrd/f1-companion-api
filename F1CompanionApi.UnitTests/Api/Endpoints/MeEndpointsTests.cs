@@ -325,11 +325,13 @@ public class MeEndpointsTests
             LastName = "Doe"
         };
 
-        var teamResponse = new TeamResponse
+        var teamResponse = new TeamDetailsResponse
         {
             Id = 1,
             Name = "My Team",
-            OwnerName = "John Doe"
+            OwnerName = "John Doe",
+            Drivers = new List<TeamDriverResponse>(),
+            Constructors = new List<TeamConstructorResponse>()
         };
 
         _mockUserProfileService
@@ -344,8 +346,8 @@ public class MeEndpointsTests
         var result = await InvokeGetMyTeamAsync();
 
         // Assert
-        Assert.IsType<Ok<TeamResponse>>(result);
-        var okResult = (Ok<TeamResponse>)result;
+        Assert.IsType<Ok<TeamDetailsResponse>>(result);
+        var okResult = (Ok<TeamDetailsResponse>)result;
         Assert.Equal(teamResponse, okResult.Value);
         Assert.Equal("My Team", okResult.Value!.Name);
     }
@@ -369,7 +371,7 @@ public class MeEndpointsTests
 
         _mockTeamService
             .Setup(x => x.GetUserTeamAsync(user.Id))
-            .ReturnsAsync((TeamResponse?)null);
+            .ReturnsAsync((TeamDetailsResponse?)null);
 
         // Act
         var result = await InvokeGetMyTeamAsync();

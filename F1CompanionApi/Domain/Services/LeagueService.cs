@@ -24,8 +24,11 @@ public class LeagueService : ILeagueService
 
     public LeagueService(ApplicationDbContext dbContext, ILogger<LeagueService> logger)
     {
-        _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(dbContext);
+        ArgumentNullException.ThrowIfNull(logger);
+
+        _dbContext = dbContext;
+        _logger = logger;
     }
 
     public async Task<LeagueResponse> CreateLeagueAsync(

@@ -18,8 +18,11 @@ public class DriverService : IDriverService
 
     public DriverService(ApplicationDbContext dbContext, ILogger<DriverService> logger)
     {
-        _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(dbContext);
+        ArgumentNullException.ThrowIfNull(logger);
+
+        _dbContext = dbContext;
+        _logger = logger;
     }
 
     public async Task<IEnumerable<DriverResponse>> GetDriversAsync(bool? activeOnly = null)

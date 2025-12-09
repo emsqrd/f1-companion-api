@@ -1,7 +1,7 @@
+using F1CompanionApi.Api.Mappers;
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Data;
 using F1CompanionApi.Data.Entities;
-using F1CompanionApi.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace F1CompanionApi.Domain.Services;
@@ -9,7 +9,11 @@ namespace F1CompanionApi.Domain.Services;
 public interface ITeamService
 {
     Task<TeamResponse> CreateTeamAsync(CreateTeamRequest request, int userId);
-    Task<TeamResponse?> GetUserTeamAsync(int userId);
+    Task<TeamDetailsResponse?> GetUserTeamAsync(int userId);
+    Task AddDriverToTeamAsync(int teamId, int driverId, int slotPosition, int userId);
+    Task RemoveDriverFromTeamAsync(int teamId, int slotPosition, int userId);
+    Task AddConstructorToTeamAsync(int teamId, int constructorId, int slotPosition, int userId);
+    Task RemoveConstructorFromTeamAsync(int teamId, int slotPosition, int userId);
 }
 
 public class TeamService : ITeamService
@@ -22,8 +26,11 @@ public class TeamService : ITeamService
         ILogger<TeamService> logger
     )
     {
-        _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(dbContext);
+        ArgumentNullException.ThrowIfNull(logger);
+
+        _dbContext = dbContext;
+        _logger = logger;
     }
 
     public async Task<TeamResponse> CreateTeamAsync(CreateTeamRequest request, int userId)
@@ -59,19 +66,24 @@ public class TeamService : ITeamService
         await _dbContext.SaveChangesAsync();
 
         _logger.LogInformation("Team {TeamId} created for user {UserId}", team.Id, userId);
-        return new TeamResponse
-        {
-            Id = team.Id,
-            Name = team.Name,
-            OwnerName = user.GetFullName(),
-        };
+
+        // Load the owner for mapping
+        team.Owner = user;
+
+        return team.ToResponseModel();
     }
 
-    public async Task<TeamResponse?> GetUserTeamAsync(int userId)
+    public async Task<TeamDetailsResponse?> GetUserTeamAsync(int userId)
     {
         _logger.LogDebug("Fetching team for user {UserId}", userId);
 
-        var team = await _dbContext.Teams.FirstOrDefaultAsync(t => t.UserId == userId);
+        var team = await _dbContext.Teams
+            .Include(t => t.Owner)
+            .Include(t => t.TeamDrivers)
+                .ThenInclude(td => td.Driver)
+            .Include(t => t.TeamConstructors)
+                .ThenInclude(tc => tc.Constructor)
+            .FirstOrDefaultAsync(t => t.UserId == userId);
 
         if (team is null)
         {
@@ -79,11 +91,218 @@ public class TeamService : ITeamService
             return null;
         }
 
-        return new TeamResponse
+        return team.ToDetailsResponseModel();
+    }
+
+    public async Task AddDriverToTeamAsync(int teamId, int driverId, int slotPosition, int userId)
+    {
+        _logger.LogInformation("Adding driver {DriverId} to team {TeamId} at slot {SlotPosition}", driverId, teamId, slotPosition);
+
+        // Validate team ownership
+        var team = await _dbContext.Teams
+            .Include(t => t.TeamDrivers)
+            .FirstOrDefaultAsync(t => t.Id == teamId);
+
+        if (team is null)
         {
-            Id = team.Id,
-            Name = team.Name,
-            OwnerName = team.Owner.GetFullName(),
+            _logger.LogWarning("Team {TeamId} not found", teamId);
+            throw new InvalidOperationException("Team not found");
+        }
+
+        if (team.UserId != userId)
+        {
+            _logger.LogWarning("User {UserId} attempted to modify team {TeamId} owned by {OwnerId}", userId, teamId, team.UserId);
+            throw new InvalidOperationException("Cannot modify another user's team");
+        }
+
+        // Validate slot position range
+        if (slotPosition < 0 || slotPosition > 4)
+        {
+            _logger.LogWarning("Invalid slot position {SlotPosition} for driver", slotPosition);
+            throw new InvalidOperationException("Slot position must be between 0 and 4 for drivers");
+        }
+
+        // Validate driver limit
+        if (team.TeamDrivers.Count >= 5)
+        {
+            _logger.LogWarning("Team {TeamId} already has maximum drivers", teamId);
+            throw new InvalidOperationException("Team cannot have more than 5 drivers");
+        }
+
+        // Check if slot is already occupied
+        if (team.TeamDrivers.Any(td => td.SlotPosition == slotPosition))
+        {
+            _logger.LogWarning("Slot {SlotPosition} already occupied on team {TeamId}", slotPosition, teamId);
+            throw new InvalidOperationException($"Slot position {slotPosition} is already occupied");
+        }
+
+        // Check if driver already on team
+        if (team.TeamDrivers.Any(td => td.DriverId == driverId))
+        {
+            _logger.LogWarning("Driver {DriverId} already on team {TeamId}", driverId, teamId);
+            throw new InvalidOperationException("Driver is already on this team");
+        }
+
+        // Verify driver exists
+        var driver = await _dbContext.Drivers.FindAsync(driverId);
+        if (driver is null)
+        {
+            _logger.LogWarning("Driver {DriverId} not found", driverId);
+            throw new InvalidOperationException("Driver not found");
+        }
+
+        var teamDriver = new TeamDriver
+        {
+            TeamId = teamId,
+            DriverId = driverId,
+            SlotPosition = slotPosition,
+            CreatedBy = userId,
+            CreatedAt = DateTime.UtcNow
         };
+
+        _dbContext.TeamDrivers.Add(teamDriver);
+        await _dbContext.SaveChangesAsync();
+
+        _logger.LogInformation("Driver {DriverId} added to team {TeamId} at slot {SlotPosition}", driverId, teamId, slotPosition);
+    }
+
+    public async Task RemoveDriverFromTeamAsync(int teamId, int slotPosition, int userId)
+    {
+        _logger.LogInformation("Removing driver from team {TeamId} at slot {SlotPosition}", teamId, slotPosition);
+
+        // Validate team ownership
+        var team = await _dbContext.Teams.FirstOrDefaultAsync(t => t.Id == teamId);
+
+        if (team is null)
+        {
+            _logger.LogWarning("Team {TeamId} not found", teamId);
+            throw new InvalidOperationException("Team not found");
+        }
+
+        if (team.UserId != userId)
+        {
+            _logger.LogWarning("User {UserId} attempted to modify team {TeamId} owned by {OwnerId}", userId, teamId, team.UserId);
+            throw new InvalidOperationException("Cannot modify another user's team");
+        }
+
+        var teamDriver = await _dbContext.TeamDrivers
+            .FirstOrDefaultAsync(td => td.TeamId == teamId && td.SlotPosition == slotPosition);
+
+        if (teamDriver is null)
+        {
+            _logger.LogWarning("No driver found at slot {SlotPosition} on team {TeamId}", slotPosition, teamId);
+            throw new InvalidOperationException($"No driver found at slot position {slotPosition}");
+        }
+
+        _dbContext.TeamDrivers.Remove(teamDriver);
+        await _dbContext.SaveChangesAsync();
+
+        _logger.LogInformation("Driver removed from team {TeamId} at slot {SlotPosition}", teamId, slotPosition);
+    }
+
+    public async Task AddConstructorToTeamAsync(int teamId, int constructorId, int slotPosition, int userId)
+    {
+        _logger.LogInformation("Adding constructor {ConstructorId} to team {TeamId} at slot {SlotPosition}", constructorId, teamId, slotPosition);
+
+        // Validate team ownership
+        var team = await _dbContext.Teams
+            .Include(t => t.TeamConstructors)
+            .FirstOrDefaultAsync(t => t.Id == teamId);
+
+        if (team is null)
+        {
+            _logger.LogWarning("Team {TeamId} not found", teamId);
+            throw new InvalidOperationException("Team not found");
+        }
+
+        if (team.UserId != userId)
+        {
+            _logger.LogWarning("User {UserId} attempted to modify team {TeamId} owned by {OwnerId}", userId, teamId, team.UserId);
+            throw new InvalidOperationException("Cannot modify another user's team");
+        }
+
+        // Validate slot position range
+        if (slotPosition < 0 || slotPosition > 1)
+        {
+            _logger.LogWarning("Invalid slot position {SlotPosition} for constructor", slotPosition);
+            throw new InvalidOperationException("Slot position must be between 0 and 1 for constructors");
+        }
+
+        // Validate constructor limit
+        if (team.TeamConstructors.Count >= 2)
+        {
+            _logger.LogWarning("Team {TeamId} already has maximum constructors", teamId);
+            throw new InvalidOperationException("Team cannot have more than 2 constructors");
+        }
+
+        // Check if slot is already occupied
+        if (team.TeamConstructors.Any(tc => tc.SlotPosition == slotPosition))
+        {
+            _logger.LogWarning("Slot {SlotPosition} already occupied on team {TeamId}", slotPosition, teamId);
+            throw new InvalidOperationException($"Slot position {slotPosition} is already occupied");
+        }
+
+        // Check if constructor already on team
+        if (team.TeamConstructors.Any(tc => tc.ConstructorId == constructorId))
+        {
+            _logger.LogWarning("Constructor {ConstructorId} already on team {TeamId}", constructorId, teamId);
+            throw new InvalidOperationException("Constructor is already on this team");
+        }
+
+        // Verify constructor exists
+        var constructor = await _dbContext.Constructors.FindAsync(constructorId);
+        if (constructor is null)
+        {
+            _logger.LogWarning("Constructor {ConstructorId} not found", constructorId);
+            throw new InvalidOperationException("Constructor not found");
+        }
+
+        var teamConstructor = new TeamConstructor
+        {
+            TeamId = teamId,
+            ConstructorId = constructorId,
+            SlotPosition = slotPosition,
+            CreatedBy = userId,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _dbContext.TeamConstructors.Add(teamConstructor);
+        await _dbContext.SaveChangesAsync();
+
+        _logger.LogInformation("Constructor {ConstructorId} added to team {TeamId} at slot {SlotPosition}", constructorId, teamId, slotPosition);
+    }
+
+    public async Task RemoveConstructorFromTeamAsync(int teamId, int slotPosition, int userId)
+    {
+        _logger.LogInformation("Removing constructor from team {TeamId} at slot {SlotPosition}", teamId, slotPosition);
+
+        // Validate team ownership
+        var team = await _dbContext.Teams.FirstOrDefaultAsync(t => t.Id == teamId);
+
+        if (team is null)
+        {
+            _logger.LogWarning("Team {TeamId} not found", teamId);
+            throw new InvalidOperationException("Team not found");
+        }
+
+        if (team.UserId != userId)
+        {
+            _logger.LogWarning("User {UserId} attempted to modify team {TeamId} owned by {OwnerId}", userId, teamId, team.UserId);
+            throw new InvalidOperationException("Cannot modify another user's team");
+        }
+
+        var teamConstructor = await _dbContext.TeamConstructors
+            .FirstOrDefaultAsync(tc => tc.TeamId == teamId && tc.SlotPosition == slotPosition);
+
+        if (teamConstructor is null)
+        {
+            _logger.LogWarning("No constructor found at slot {SlotPosition} on team {TeamId}", slotPosition, teamId);
+            throw new InvalidOperationException($"No constructor found at slot position {slotPosition}");
+        }
+
+        _dbContext.TeamConstructors.Remove(teamConstructor);
+        await _dbContext.SaveChangesAsync();
+
+        _logger.LogInformation("Constructor removed from team {TeamId} at slot {SlotPosition}", teamId, slotPosition);
     }
 }

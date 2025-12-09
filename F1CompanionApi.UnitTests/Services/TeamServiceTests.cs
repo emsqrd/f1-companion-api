@@ -297,4 +297,551 @@ public class TeamServiceTests
         var teamCount = await context.Teams.CountAsync(t => t.UserId == user.Id);
         Assert.Equal(1, teamCount);
     }
+
+    #region AddDriverToTeamAsync Tests
+
+    [Fact]
+    public async Task AddDriverToTeamAsync_ValidRequest_AddsDriverToTeam()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        var driver = CreateTestDriver(context, "VER", "Max", "Verstappen");
+
+        // Act
+        await service.AddDriverToTeamAsync(team.Id, driver.Id, 0, user.Id);
+
+        // Assert
+        var teamDriver = await context.TeamDrivers
+            .FirstOrDefaultAsync(td => td.TeamId == team.Id && td.DriverId == driver.Id);
+
+        Assert.NotNull(teamDriver);
+    }
+
+    [Fact]
+    public async Task AddDriverToTeamAsync_TeamNotFound_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var driver = CreateTestDriver(context, "VER", "Max", "Verstappen");
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.AddDriverToTeamAsync(999, driver.Id, 0, 1)
+        );
+        Assert.Equal("Team not found", exception.Message);
+    }
+
+    [Fact]
+    public async Task AddDriverToTeamAsync_NonOwnerAttempt_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var owner = CreateTestUser(context);
+        var otherUser = CreateTestUser(context, "other@test.com");
+        var team = CreateTestTeam(context, owner.Id);
+        var driver = CreateTestDriver(context, "VER", "Max", "Verstappen");
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.AddDriverToTeamAsync(team.Id, driver.Id, 0, otherUser.Id)
+        );
+        Assert.Equal("Cannot modify another user's team", exception.Message);
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(5)]
+    [InlineData(10)]
+    public async Task AddDriverToTeamAsync_InvalidSlotPosition_ThrowsInvalidOperationException(int slotPosition)
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        var driver = CreateTestDriver(context, "VER", "Max", "Verstappen");
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.AddDriverToTeamAsync(team.Id, driver.Id, slotPosition, user.Id)
+        );
+        Assert.Equal("Slot position must be between 0 and 4 for drivers", exception.Message);
+    }
+
+    [Fact]
+    public async Task AddDriverToTeamAsync_TeamHasMaximumDrivers_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+
+        // Add 5 drivers to fill all slots
+        for (int i = 0; i < 5; i++)
+        {
+            var driver = CreateTestDriver(context, $"DR{i}", $"Driver{i}", $"Last{i}");
+            await service.AddDriverToTeamAsync(team.Id, driver.Id, i, user.Id);
+        }
+
+        var newDriver = CreateTestDriver(context, "NEW", "New", "Driver");
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.AddDriverToTeamAsync(team.Id, newDriver.Id, 0, user.Id)
+        );
+        Assert.Equal("Team cannot have more than 5 drivers", exception.Message);
+    }
+
+    [Fact]
+    public async Task AddDriverToTeamAsync_SlotAlreadyOccupied_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        var driver1 = CreateTestDriver(context, "VER", "Max", "Verstappen");
+        var driver2 = CreateTestDriver(context, "PER", "Sergio", "Perez");
+
+        await service.AddDriverToTeamAsync(team.Id, driver1.Id, 0, user.Id);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.AddDriverToTeamAsync(team.Id, driver2.Id, 0, user.Id)
+        );
+        Assert.Equal("Slot position 0 is already occupied", exception.Message);
+    }
+
+    [Fact]
+    public async Task AddDriverToTeamAsync_DriverAlreadyOnTeam_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        var driver = CreateTestDriver(context, "VER", "Max", "Verstappen");
+
+        await service.AddDriverToTeamAsync(team.Id, driver.Id, 0, user.Id);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.AddDriverToTeamAsync(team.Id, driver.Id, 1, user.Id)
+        );
+        Assert.Equal("Driver is already on this team", exception.Message);
+    }
+
+    [Fact]
+    public async Task AddDriverToTeamAsync_DriverNotFound_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.AddDriverToTeamAsync(team.Id, 999, 0, user.Id)
+        );
+        Assert.Equal("Driver not found", exception.Message);
+    }
+
+    #endregion
+
+    #region RemoveDriverFromTeamAsync Tests
+
+    [Fact]
+    public async Task RemoveDriverFromTeamAsync_ValidRequest_RemovesDriverFromTeam()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        var driver = CreateTestDriver(context, "VER", "Max", "Verstappen");
+
+        await service.AddDriverToTeamAsync(team.Id, driver.Id, 0, user.Id);
+
+        // Act
+        await service.RemoveDriverFromTeamAsync(team.Id, 0, user.Id);
+
+        // Assert
+        var teamDriver = await context.TeamDrivers
+            .FirstOrDefaultAsync(td => td.TeamId == team.Id && td.SlotPosition == 0);
+
+        Assert.Null(teamDriver);
+    }
+
+    [Fact]
+    public async Task RemoveDriverFromTeamAsync_TeamNotFound_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.RemoveDriverFromTeamAsync(999, 0, 1)
+        );
+        Assert.Equal("Team not found", exception.Message);
+    }
+
+    [Fact]
+    public async Task RemoveDriverFromTeamAsync_NonOwnerAttempt_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var owner = CreateTestUser(context);
+        var otherUser = CreateTestUser(context, "other@test.com");
+        var team = CreateTestTeam(context, owner.Id);
+        var driver = CreateTestDriver(context, "VER", "Max", "Verstappen");
+
+        await service.AddDriverToTeamAsync(team.Id, driver.Id, 0, owner.Id);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.RemoveDriverFromTeamAsync(team.Id, 0, otherUser.Id)
+        );
+        Assert.Equal("Cannot modify another user's team", exception.Message);
+    }
+
+    [Fact]
+    public async Task RemoveDriverFromTeamAsync_EmptySlot_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.RemoveDriverFromTeamAsync(team.Id, 0, user.Id)
+        );
+        Assert.Equal("No driver found at slot position 0", exception.Message);
+    }
+
+    #endregion
+
+    #region AddConstructorToTeamAsync Tests
+
+    [Fact]
+    public async Task AddConstructorToTeamAsync_ValidRequest_AddsConstructorToTeam()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        var constructor = CreateTestConstructor(context, "Red Bull Racing");
+
+        // Act
+        await service.AddConstructorToTeamAsync(team.Id, constructor.Id, 0, user.Id);
+
+        // Assert
+        var teamConstructor = await context.TeamConstructors
+            .FirstOrDefaultAsync(tc => tc.TeamId == team.Id && tc.ConstructorId == constructor.Id);
+
+        Assert.NotNull(teamConstructor);
+    }
+
+    [Fact]
+    public async Task AddConstructorToTeamAsync_TeamNotFound_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var constructor = CreateTestConstructor(context, "Red Bull Racing");
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.AddConstructorToTeamAsync(999, constructor.Id, 0, 1)
+        );
+        Assert.Equal("Team not found", exception.Message);
+    }
+
+    [Fact]
+    public async Task AddConstructorToTeamAsync_NonOwnerAttempt_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var owner = CreateTestUser(context);
+        var otherUser = CreateTestUser(context, "other@test.com");
+        var team = CreateTestTeam(context, owner.Id);
+        var constructor = CreateTestConstructor(context, "Red Bull Racing");
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.AddConstructorToTeamAsync(team.Id, constructor.Id, 0, otherUser.Id)
+        );
+        Assert.Equal("Cannot modify another user's team", exception.Message);
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(2)]
+    [InlineData(5)]
+    public async Task AddConstructorToTeamAsync_InvalidSlotPosition_ThrowsInvalidOperationException(int slotPosition)
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        var constructor = CreateTestConstructor(context, "Red Bull Racing");
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.AddConstructorToTeamAsync(team.Id, constructor.Id, slotPosition, user.Id)
+        );
+        Assert.Equal("Slot position must be between 0 and 1 for constructors", exception.Message);
+    }
+
+    [Fact]
+    public async Task AddConstructorToTeamAsync_TeamHasMaximumConstructors_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+
+        // Add 2 constructors to fill all slots
+        var constructor1 = CreateTestConstructor(context, "Red Bull Racing");
+        var constructor2 = CreateTestConstructor(context, "Ferrari");
+        await service.AddConstructorToTeamAsync(team.Id, constructor1.Id, 0, user.Id);
+        await service.AddConstructorToTeamAsync(team.Id, constructor2.Id, 1, user.Id);
+
+        var newConstructor = CreateTestConstructor(context, "Mercedes");
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.AddConstructorToTeamAsync(team.Id, newConstructor.Id, 0, user.Id)
+        );
+        Assert.Equal("Team cannot have more than 2 constructors", exception.Message);
+    }
+
+    [Fact]
+    public async Task AddConstructorToTeamAsync_SlotAlreadyOccupied_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        var constructor1 = CreateTestConstructor(context, "Red Bull Racing");
+        var constructor2 = CreateTestConstructor(context, "Ferrari");
+
+        await service.AddConstructorToTeamAsync(team.Id, constructor1.Id, 0, user.Id);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.AddConstructorToTeamAsync(team.Id, constructor2.Id, 0, user.Id)
+        );
+        Assert.Equal("Slot position 0 is already occupied", exception.Message);
+    }
+
+    [Fact]
+    public async Task AddConstructorToTeamAsync_ConstructorAlreadyOnTeam_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        var constructor = CreateTestConstructor(context, "Red Bull Racing");
+
+        await service.AddConstructorToTeamAsync(team.Id, constructor.Id, 0, user.Id);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.AddConstructorToTeamAsync(team.Id, constructor.Id, 1, user.Id)
+        );
+        Assert.Equal("Constructor is already on this team", exception.Message);
+    }
+
+    [Fact]
+    public async Task AddConstructorToTeamAsync_ConstructorNotFound_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.AddConstructorToTeamAsync(team.Id, 999, 0, user.Id)
+        );
+        Assert.Equal("Constructor not found", exception.Message);
+    }
+
+    #endregion
+
+    #region RemoveConstructorFromTeamAsync Tests
+
+    [Fact]
+    public async Task RemoveConstructorFromTeamAsync_ValidRequest_RemovesConstructorFromTeam()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        var constructor = CreateTestConstructor(context, "Red Bull Racing");
+
+        await service.AddConstructorToTeamAsync(team.Id, constructor.Id, 0, user.Id);
+
+        // Act
+        await service.RemoveConstructorFromTeamAsync(team.Id, 0, user.Id);
+
+        // Assert
+        var teamConstructor = await context.TeamConstructors
+            .FirstOrDefaultAsync(tc => tc.TeamId == team.Id && tc.SlotPosition == 0);
+
+        Assert.Null(teamConstructor);
+    }
+
+    [Fact]
+    public async Task RemoveConstructorFromTeamAsync_TeamNotFound_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.RemoveConstructorFromTeamAsync(999, 0, 1)
+        );
+        Assert.Equal("Team not found", exception.Message);
+    }
+
+    [Fact]
+    public async Task RemoveConstructorFromTeamAsync_NonOwnerAttempt_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var owner = CreateTestUser(context);
+        var otherUser = CreateTestUser(context, "other@test.com");
+        var team = CreateTestTeam(context, owner.Id);
+        var constructor = CreateTestConstructor(context, "Red Bull Racing");
+
+        await service.AddConstructorToTeamAsync(team.Id, constructor.Id, 0, owner.Id);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.RemoveConstructorFromTeamAsync(team.Id, 0, otherUser.Id)
+        );
+        Assert.Equal("Cannot modify another user's team", exception.Message);
+    }
+
+    [Fact]
+    public async Task RemoveConstructorFromTeamAsync_EmptySlot_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.RemoveConstructorFromTeamAsync(team.Id, 0, user.Id)
+        );
+        Assert.Equal("No constructor found at slot position 0", exception.Message);
+    }
+
+    #endregion
+
+    #region Helper Methods
+
+    private UserProfile CreateTestUser(ApplicationDbContext context, string email = "user@test.com")
+    {
+        var user = new UserProfile
+        {
+            AccountId = Guid.NewGuid().ToString(),
+            Email = email,
+            FirstName = "John",
+            LastName = "Doe"
+        };
+        context.UserProfiles.Add(user);
+        context.SaveChanges();
+        return user;
+    }
+
+    private Team CreateTestTeam(ApplicationDbContext context, int userId, string name = "Test Team")
+    {
+        var team = new Team
+        {
+            Name = name,
+            UserId = userId,
+            CreatedBy = userId,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.Teams.Add(team);
+        context.SaveChanges();
+        return team;
+    }
+
+    private Driver CreateTestDriver(ApplicationDbContext context, string abbreviation, string firstName, string lastName)
+    {
+        var driver = new Driver
+        {
+            FirstName = firstName,
+            LastName = lastName,
+            Abbreviation = abbreviation,
+            CountryAbbreviation = "NL",
+            IsActive = true
+        };
+        context.Drivers.Add(driver);
+        context.SaveChanges();
+        return driver;
+    }
+
+    private Constructor CreateTestConstructor(ApplicationDbContext context, string name)
+    {
+        var constructor = new Constructor
+        {
+            Name = name,
+            CountryAbbreviation = "AT",
+            IsActive = true
+        };
+        context.Constructors.Add(constructor);
+        context.SaveChanges();
+        return constructor;
+    }
+
+    #endregion
 }

@@ -9,4 +9,6 @@ public class Team : UserOwnedEntity
     public int UserId { get; set; } // FK
 
     public UserProfile Owner { get; set; } = null!;
+    public ICollection<TeamDriver> TeamDrivers { get; set; } = new List<TeamDriver>();
+    public ICollection<TeamConstructor> TeamConstructors { get; set; } = new List<TeamConstructor>();
 }

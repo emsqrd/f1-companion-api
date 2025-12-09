@@ -113,6 +113,50 @@ public static class FeatureEndpoints
 - **Async Operations**: All database operations use async/await pattern with `Task<T>` return types
 - **EF Core Includes**: Use `.Include()` for eager loading navigation properties to avoid lazy loading issues
 - **Business Validation**: Services throw domain exceptions (e.g., `InvalidOperationException`) for business rule violations
+- **Response Mapping**: Services return response DTOs, using extension methods from `Api/Mappers/` to map entities to response models
+
+### Response Mapper Pattern
+
+All entity-to-DTO mapping is done via extension methods in the `Api/Mappers/` folder:
+
+- **Naming Convention**: `{Entity}ResponseMapper.cs` (e.g., `DriverResponseMapper.cs`, `TeamResponseMapper.cs`)
+- **Method Naming**: `ToResponseModel()` for standard mapping, or more specific names like `ToDetailsResponseModel()` for complex mappings
+- **Pattern**: Static extension methods on entity classes that return response DTOs
+- **Variable Naming**: Use full descriptive variable names (e.g., `teamDriver`, `teamConstructor`) instead of abbreviations (e.g., `td`, `tc`)
+
+**Example Mapper:**
+
+```csharp
+public static class DriverResponseMapper
+{
+    public static DriverResponse ToResponseModel(this Driver driver)
+    {
+        return new DriverResponse
+        {
+            Id = driver.Id,
+            FirstName = driver.FirstName,
+            LastName = driver.LastName,
+            Abbreviation = driver.Abbreviation,
+            CountryAbbreviation = driver.CountryAbbreviation
+        };
+    }
+
+    public static IEnumerable<DriverResponse> ToResponseModel(this IEnumerable<Driver> drivers)
+    {
+        return drivers.Select(driver => driver.ToResponseModel());
+    }
+}
+```
+
+**Service Usage:**
+
+```csharp
+public async Task<DriverResponse?> GetDriverByIdAsync(int id)
+{
+    var driver = await _dbContext.Drivers.FirstOrDefaultAsync(x => x.Id == id);
+    return driver?.ToResponseModel();
+}
+```
 
 ### Example Service Pattern
 
