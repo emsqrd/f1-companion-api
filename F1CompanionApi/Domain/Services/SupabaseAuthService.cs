@@ -25,10 +25,12 @@ public class SupabaseAuthService : ISupabaseAuthService
         IHttpContextAccessor httpContextAccessor
     )
     {
+        ArgumentNullException.ThrowIfNull(configuration);
+        ArgumentNullException.ThrowIfNull(httpContextAccessor);
+
         _jwtSecret = configuration["Supabase:JwtSecret"] ?? throw new InvalidOperationException("Supabase JWT secret not configured");
         _tokenHandler = new JwtSecurityTokenHandler();
-        _httpContextAccessor =
-            httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public ClaimsPrincipal? ValidateToken(string token)

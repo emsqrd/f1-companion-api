@@ -2,6 +2,9 @@ using System.Text.Json.Serialization;
 
 namespace F1CompanionApi.Data.Entities;
 
+/// <summary>
+/// Represents a user profile with display information and account details.
+/// </summary>
 public class UserProfile
 {
     public int Id { get; set; }

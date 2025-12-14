@@ -3,13 +3,12 @@ using F1CompanionApi.Data;
 using F1CompanionApi.Data.Entities;
 using F1CompanionApi.Extensions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace F1CompanionApi.Domain.Services;
 
 public interface ILeagueService
 {
-    Task<LeagueResponseModel> CreateLeagueAsync(
+    Task<LeagueResponse> CreateLeagueAsync(
         CreateLeagueRequest createLeagueRequest,
         int ownerId
     );
@@ -25,11 +24,14 @@ public class LeagueService : ILeagueService
 
     public LeagueService(ApplicationDbContext dbContext, ILogger<LeagueService> logger)
     {
-        _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(dbContext);
+        ArgumentNullException.ThrowIfNull(logger);
+
+        _dbContext = dbContext;
+        _logger = logger;
     }
 
-    public async Task<LeagueResponseModel> CreateLeagueAsync(
+    public async Task<LeagueResponse> CreateLeagueAsync(
         CreateLeagueRequest createLeagueRequest,
         int ownerId
     )
@@ -59,7 +61,7 @@ public class LeagueService : ILeagueService
         _logger.LogInformation("Successfully created league {LeagueId} with name {LeagueName} for owner {OwnerId}",
             newLeague.Id, newLeague.Name, ownerId);
 
-        return new LeagueResponseModel
+        return new LeagueResponse
         {
             Id = newLeague.Id,
             Name = newLeague.Name,
@@ -70,7 +72,7 @@ public class LeagueService : ILeagueService
         };
     }
 
-    // TODO: Update these endpoints to return LeagueResponseModel instead of League
+    // TODO: Update these endpoints to return LeagueResponse instead of League
     public async Task<IEnumerable<League>> GetLeaguesAsync()
     {
         _logger.LogDebug("Fetching all leagues");

@@ -1,3 +1,4 @@
+using F1CompanionApi.Api.Mappers;
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Data;
 using F1CompanionApi.Data.Entities;
@@ -70,7 +71,14 @@ public static class TeamEndpoints
         [FromServices] ILogger logger)
     {
         logger.LogDebug("Fetching team {TeamId}", id);
-        var team = await db.Teams.Where(team => team.Id == id).FirstOrDefaultAsync();
+        
+        var team = await db.Teams
+            .Include(t => t.Owner)
+            .Include(t => t.TeamDrivers)
+                .ThenInclude(td => td.Driver)
+            .Include(t => t.TeamConstructors)
+                .ThenInclude(tc => tc.Constructor)
+            .FirstOrDefaultAsync(t => t.Id == id);
 
         if (team is null)
         {
@@ -81,6 +89,6 @@ public static class TeamEndpoints
             );
         }
 
-        return Results.Ok(team);
+        return Results.Ok(team.ToDetailsResponseModel());
     }
 }

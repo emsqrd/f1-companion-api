@@ -32,9 +32,13 @@ public class UserProfileService : IUserProfileService
         ISupabaseAuthService authService,
         ILogger<UserProfileService> logger)
     {
-        _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
-        _authService = authService ?? throw new ArgumentNullException(nameof(authService));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(dbContext);
+        ArgumentNullException.ThrowIfNull(authService);
+        ArgumentNullException.ThrowIfNull(logger);
+
+        _dbContext = dbContext;
+        _authService = authService;
+        _logger = logger;
     }
 
     public async Task<UserProfile?> GetUserProfileByAccountIdAsync(string accountId)

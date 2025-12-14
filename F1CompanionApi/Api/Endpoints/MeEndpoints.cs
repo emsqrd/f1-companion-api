@@ -11,42 +11,62 @@ public static class MeEndpoints
 
     public static IEndpointRouteBuilder MapMeEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/me/profile", GetUserProfileAsync)
+        var meGroup = app.MapGroup("/me")
+            .RequireAuthorization();
+
+        meGroup.MapGet("/profile", GetUserProfileAsync)
             .WithName("Get User Profile")
             .WithOpenApi()
-            .WithDescription("Gets user profile")
-            .RequireAuthorization();
+            .WithDescription("Gets user profile");
 
-        app.MapPost("/me/register", RegisterUserAsync)
+        meGroup.MapPost("/register", RegisterUserAsync)
             .WithName("Register User")
             .WithOpenApi()
-            .WithDescription("Creates user account and profile")
-            .RequireAuthorization();
+            .WithDescription("Creates user account and profile");
 
-        app.MapPatch("/me/profile", UpdateUserProfileAsync)
+        meGroup.MapPatch("/profile", UpdateUserProfileAsync)
             .WithName("Update User Profile")
             .WithOpenApi()
-            .WithDescription("Updates user profile")
-            .RequireAuthorization();
+            .WithDescription("Updates user profile");
 
-        app.MapGet("/me/leagues", GetMyLeaguesAsync)
+        meGroup.MapGet("/leagues", GetMyLeaguesAsync)
             .WithName("Get My Leagues")
             .WithOpenApi()
-            .WithDescription("Gets leagues owned by the authenticated user")
-            .RequireAuthorization();
+            .WithDescription("Gets leagues owned by the authenticated user");
 
-        app.MapGet("/me/team", GetMyTeamAsync)
+        var teamGroup = meGroup.MapGroup("/team");
+
+        teamGroup.MapGet("/", GetMyTeamAsync)
             .WithName("Get My Team")
             .WithOpenApi()
-            .WithDescription("Get current user's team or null if none exists")
-            .RequireAuthorization();
+            .WithDescription("Get current user's team or null if none exists");
+
+        teamGroup.MapPost("/drivers", AddDriverToTeamAsync)
+            .WithName("Add Driver to Team")
+            .WithOpenApi()
+            .WithDescription("Add a driver to the current user's team at a specific slot position");
+
+        teamGroup.MapDelete("/drivers/{slotPosition}", RemoveDriverFromTeamAsync)
+            .WithName("Remove Driver from Team")
+            .WithOpenApi()
+            .WithDescription("Remove a driver from the current user's team at a specific slot position");
+
+        teamGroup.MapPost("/constructors", AddConstructorToTeamAsync)
+            .WithName("Add Constructor to Team")
+            .WithOpenApi()
+            .WithDescription("Add a constructor to the current user's team at a specific slot position");
+
+        teamGroup.MapDelete("/constructors/{slotPosition}", RemoveConstructorFromTeamAsync)
+            .WithName("Remove Constructor from Team")
+            .WithOpenApi()
+            .WithDescription("Remove a constructor from the current user's team at a specific slot position");
 
         return app;
     }
 
     private static async Task<IResult> GetUserProfileAsync(
         IUserProfileService userProfileService,
-        [FromServices] ILogger logger)
+        ILogger logger)
     {
         logger.LogDebug("Fetching current user profile");
         var user = await userProfileService.GetCurrentUserProfileAsync();
@@ -68,7 +88,7 @@ public static class MeEndpoints
         ISupabaseAuthService authService,
         IUserProfileService userProfileService,
         RegisterUserRequest request,
-        [FromServices] ILogger logger
+        ILogger logger
     )
     {
         var userId = authService.GetRequiredUserId();
@@ -120,7 +140,7 @@ public static class MeEndpoints
         ISupabaseAuthService authService,
         IUserProfileService userProfileService,
         UpdateUserProfileRequest updateUserProfileRequest,
-        [FromServices] ILogger logger
+        ILogger logger
     )
     {
         logger.LogInformation("Updating user profile {ProfileId}", updateUserProfileRequest.Id);
@@ -166,7 +186,7 @@ public static class MeEndpoints
     private static async Task<IResult> GetMyLeaguesAsync(
         IUserProfileService userProfileService,
         ILeagueService leagueService,
-        [FromServices] ILogger logger
+        ILogger logger
     )
     {
         logger.LogDebug("Fetching leagues for current user");
@@ -176,7 +196,7 @@ public static class MeEndpoints
             var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
             var leagues = await leagueService.GetLeaguesByOwnerIdAsync(user.Id);
 
-            var leagueResponses = leagues.Select(league => new LeagueResponseModel
+            var leagueResponses = leagues.Select(league => new LeagueResponse
             {
                 Id = league.Id,
                 Name = league.Name,
@@ -208,7 +228,7 @@ public static class MeEndpoints
     private static async Task<IResult> GetMyTeamAsync(
         ITeamService teamService,
         IUserProfileService userProfileService,
-        [FromServices] ILogger logger
+        ILogger logger
     )
     {
         var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
@@ -224,5 +244,145 @@ public static class MeEndpoints
         }
 
         return Results.Ok(team);
+    }
+
+    private static async Task<IResult> AddDriverToTeamAsync(
+        AddDriverToTeamRequest request,
+        ITeamService teamService,
+        IUserProfileService userProfileService,
+        ILogger logger
+    )
+    {
+        var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
+
+        logger.LogInformation("User {UserId} adding driver {DriverId} at slot {SlotPosition}",
+            user.Id, request.DriverId, request.SlotPosition);
+
+        try
+        {
+            // Get user's team
+            var team = await teamService.GetUserTeamAsync(user.Id);
+            if (team is null)
+            {
+                logger.LogWarning("User {UserId} has no team", user.Id);
+                return Results.Problem(
+                    detail: "User has no team. Create a team first.",
+                    statusCode: StatusCodes.Status400BadRequest
+                );
+            }
+
+            await teamService.AddDriverToTeamAsync(team.Id, request.DriverId, request.SlotPosition, user.Id);
+            return Results.NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            logger.LogWarning(ex, "Failed to add driver to team for user {UserId}", user.Id);
+            return Results.BadRequest(ex.Message);
+        }
+    }
+
+    private static async Task<IResult> RemoveDriverFromTeamAsync(
+        int slotPosition,
+        ITeamService teamService,
+        IUserProfileService userProfileService,
+        ILogger logger
+    )
+    {
+        var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
+
+        logger.LogInformation("User {UserId} removing driver from slot {SlotPosition}",
+            user.Id, slotPosition);
+
+        try
+        {
+            // Get user's team
+            var team = await teamService.GetUserTeamAsync(user.Id);
+            if (team is null)
+            {
+                logger.LogWarning("User {UserId} has no team", user.Id);
+                return Results.Problem(
+                    detail: "User has no team",
+                    statusCode: StatusCodes.Status400BadRequest
+                );
+            }
+
+            await teamService.RemoveDriverFromTeamAsync(team.Id, slotPosition, user.Id);
+            return Results.NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            logger.LogWarning(ex, "Failed to remove driver from team for user {UserId}", user.Id);
+            return Results.BadRequest(ex.Message);
+        }
+    }
+
+    private static async Task<IResult> AddConstructorToTeamAsync(
+        AddConstructorToTeamRequest request,
+        ITeamService teamService,
+        IUserProfileService userProfileService,
+        ILogger logger
+    )
+    {
+        var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
+
+        logger.LogInformation("User {UserId} adding constructor {ConstructorId} at slot {SlotPosition}",
+            user.Id, request.ConstructorId, request.SlotPosition);
+
+        try
+        {
+            // Get user's team
+            var team = await teamService.GetUserTeamAsync(user.Id);
+            if (team is null)
+            {
+                logger.LogWarning("User {UserId} has no team", user.Id);
+                return Results.Problem(
+                    detail: "User has no team. Create a team first.",
+                    statusCode: StatusCodes.Status400BadRequest
+                );
+            }
+
+            await teamService.AddConstructorToTeamAsync(team.Id, request.ConstructorId, request.SlotPosition, user.Id);
+            return Results.NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            logger.LogWarning(ex, "Failed to add constructor to team for user {UserId}", user.Id);
+            return Results.BadRequest(ex.Message);
+        }
+    }
+
+    private static async Task<IResult> RemoveConstructorFromTeamAsync(
+        int slotPosition,
+        ITeamService teamService,
+        IUserProfileService userProfileService,
+        ILogger logger
+    )
+    {
+        var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
+
+        logger.LogInformation("User {UserId} removing constructor from slot {SlotPosition}",
+            user.Id, slotPosition);
+
+        try
+        {
+            // Get user's team
+            var team = await teamService.GetUserTeamAsync(user.Id);
+            if (team is null)
+            {
+                logger.LogWarning("User {UserId} has no team", user.Id);
+                return Results.Problem(
+                    detail: "User has no team",
+                    statusCode: StatusCodes.Status400BadRequest
+                );
+            }
+
+            await teamService.RemoveConstructorFromTeamAsync(team.Id, slotPosition, user.Id);
+            return Results.NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            logger.LogWarning(ex, "Failed to remove constructor from team for user {UserId}", user.Id);
+            return Results.BadRequest(ex.Message);
+        }
     }
 }

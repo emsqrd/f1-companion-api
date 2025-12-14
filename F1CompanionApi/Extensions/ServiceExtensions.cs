@@ -99,6 +99,8 @@ public static class ServiceExtensions
 
         services.AddAuthorization();
         services.AddHttpContextAccessor();
+        services.AddScoped<IConstructorService, ConstructorService>();
+        services.AddScoped<IDriverService, DriverService>();
         services.AddScoped<ILeagueService, LeagueService>();
         services.AddScoped<ITeamService, TeamService>();
         services.AddScoped<IUserProfileService, UserProfileService>();

@@ -43,6 +43,7 @@ builder.WebHost.UseSentry(options =>
 });
 
 builder.Services.AddOpenApi();
+builder.Services.AddProblemDetails();
 
 builder.AddApplicationServices();
 
@@ -55,9 +56,10 @@ app.UseCors("AllowedOrigins");
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Apply latest migrations to the database on startup
-using (var scope = app.Services.CreateScope())
+// Only auto-migrate in development
+if (app.Environment.IsDevelopment())
 {
+    using var scope = app.Services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     dbContext.Database.Migrate();
 }

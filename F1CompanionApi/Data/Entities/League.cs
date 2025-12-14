@@ -1,6 +1,9 @@
 namespace F1CompanionApi.Data.Entities;
 
-public class League : BaseEntity
+/// <summary>
+/// Represents a fantasy F1 league with configurable privacy settings and team limits.
+/// </summary>
+public class League : UserOwnedEntity
 {
     public required string Name { get; set; }
     public string? Description { get; set; }

@@ -10,9 +10,12 @@ public class ApplicationDbContext : DbContext
 
     // Add your DbSets here
     public DbSet<Account> Accounts => Set<Account>();
+    public DbSet<Constructor> Constructors => Set<Constructor>();
     public DbSet<Driver> Drivers => Set<Driver>();
     public DbSet<League> Leagues => Set<League>();
     public DbSet<Team> Teams => Set<Team>();
+    public DbSet<TeamDriver> TeamDrivers => Set<TeamDriver>();
+    public DbSet<TeamConstructor> TeamConstructors => Set<TeamConstructor>();
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -53,16 +56,49 @@ public class ApplicationDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
-        // Configure audit trail FK for all entities that inherit from base entity
-        ConfigureAuditTrailForeignKeys<Driver>(modelBuilder);
+        // Configure TeamDriver relationships
+        modelBuilder.Entity<TeamDriver>(entity =>
+        {
+            entity
+                .HasOne(td => td.Team)
+                .WithMany(t => t.TeamDrivers)
+                .HasForeignKey(td => td.TeamId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity
+                .HasOne(td => td.Driver)
+                .WithMany()
+                .HasForeignKey(td => td.DriverId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Configure TeamConstructor relationships
+        modelBuilder.Entity<TeamConstructor>(entity =>
+        {
+            entity
+                .HasOne(tc => tc.Team)
+                .WithMany(t => t.TeamConstructors)
+                .HasForeignKey(tc => tc.TeamId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity
+                .HasOne(tc => tc.Constructor)
+                .WithMany()
+                .HasForeignKey(tc => tc.ConstructorId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Configure audit trail FK for user-owned entities only
         ConfigureAuditTrailForeignKeys<League>(modelBuilder);
         ConfigureAuditTrailForeignKeys<Team>(modelBuilder);
+        ConfigureAuditTrailForeignKeys<TeamDriver>(modelBuilder);
+        ConfigureAuditTrailForeignKeys<TeamConstructor>(modelBuilder);
     }
 
     private void ConfigureAuditTrailForeignKeys<T>(ModelBuilder modelBuilder)
-        where T : BaseEntity
+        where T : UserOwnedEntity
     {
-        // Configure foreign key relationships
+        // Configure foreign key relationships for user-owned entities
         modelBuilder
             .Entity<T>()
             .HasOne(e => e.CreatedByUser)
