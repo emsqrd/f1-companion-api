@@ -13,6 +13,9 @@ public class GlobalExceptionHandler : IExceptionHandler
         ILogger<GlobalExceptionHandler> logger,
         IProblemDetailsService problemDetailsService)
     {
+        ArgumentNullException.ThrowIfNull(logger, nameof(logger));
+        ArgumentNullException.ThrowIfNull(problemDetailsService, nameof(problemDetailsService));
+
         _logger = logger;
         _problemDetailsService = problemDetailsService;
     }
