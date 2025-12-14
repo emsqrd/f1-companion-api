@@ -77,12 +77,22 @@ public class TeamEndpointsTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
+        var owner = new UserProfile
+        {
+            Id = 1,
+            AccountId = Guid.NewGuid().ToString(),
+            Email = "owner@test.com",
+            FirstName = "Test",
+            LastName = "Owner"
+        };
         var team = new Team
         {
             Id = 1,
             Name = "Findable Team",
+            Owner = owner
         };
 
+        context.UserProfiles.Add(owner);
         context.Teams.Add(team);
         await context.SaveChangesAsync();
 
@@ -90,10 +100,13 @@ public class TeamEndpointsTests
         var result = await InvokeGetTeamByIdAsync(team.Id, context);
 
         // Assert
-        Assert.IsType<Ok<Team>>(result);
-        var okResult = (Ok<Team>)result;
+        Assert.IsType<Ok<TeamDetailsResponse>>(result);
+        var okResult = (Ok<TeamDetailsResponse>)result;
         Assert.Equal(team.Id, okResult.Value!.Id);
         Assert.Equal("Findable Team", okResult.Value.Name);
+        Assert.Equal("Test Owner", okResult.Value.OwnerName);
+        Assert.Empty(okResult.Value.Drivers);
+        Assert.Empty(okResult.Value.Constructors);
     }
 
     [Fact]
