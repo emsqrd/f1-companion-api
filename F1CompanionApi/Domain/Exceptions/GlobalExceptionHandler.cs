@@ -39,6 +39,10 @@ public class GlobalExceptionHandler : IExceptionHandler
                  "Authentication Required",
                  "Valid authentication token is required."),
 
+            // Database errors - PostgreSQL
+            PostgresException pgEx =>
+                HandlePostgresException(pgEx),
+
             // Database errors - EF Core
             DbUpdateException dbEx when dbEx.InnerException is PostgresException pgEx =>
                 HandlePostgresException(pgEx),
