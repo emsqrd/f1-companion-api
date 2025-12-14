@@ -1,5 +1,7 @@
+using System.Diagnostics;
 using F1CompanionApi.Api.Endpoints;
 using F1CompanionApi.Data;
+using F1CompanionApi.Domain.Exceptions;
 using F1CompanionApi.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
@@ -43,7 +45,24 @@ builder.WebHost.UseSentry(options =>
 });
 
 builder.Services.AddOpenApi();
-builder.Services.AddProblemDetails();
+builder.Services.AddProblemDetails(options =>
+{
+    options.CustomizeProblemDetails = context =>
+    {
+        // Add trace ID for debugging
+        context.ProblemDetails.Extensions["traceId"] =
+            Activity.Current?.Id ?? context.HttpContext.TraceIdentifier;
+
+        // Add timestamp
+        context.ProblemDetails.Extensions["timestamp"] = DateTime.UtcNow;
+
+        // Add environment for all environments
+        context.ProblemDetails.Extensions["environment"] = builder.Environment.EnvironmentName;
+    };
+});
+
+// Register global exception handler
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 builder.AddApplicationServices();
 
