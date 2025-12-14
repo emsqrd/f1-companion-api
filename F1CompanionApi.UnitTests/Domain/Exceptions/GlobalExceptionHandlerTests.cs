@@ -72,6 +72,51 @@ public class GlobalExceptionHandlerTests
             Times.Once);
     }
 
+    [Theory]
+    [InlineData("42P01", "relation \"TeamDrivers\" does not exist", 503, "Service Configuration Error", "The service is not properly configured. Please contact support.", true, LogLevel.Error)]
+    [InlineData("23505", "duplicate key value violates unique constraint", 409, "Duplicate Resource", "This resource already exists.", false, LogLevel.Warning)]
+    public async Task TryHandleAsync_DirectPostgresException_ReturnsExpectedStatusAndProblemDetails(
+        string sqlState,
+        string errorMessage,
+        int expectedStatusCode,
+        string expectedTitle,
+        string expectedDetail,
+        bool shouldIncludeException,
+        LogLevel expectedLogLevel)
+    {
+        // Arrange - Direct PostgresException (not wrapped in DbUpdateException)
+        var pgEx = new PostgresException(errorMessage, "ERROR", "ERROR", sqlState);
+
+        // Act
+        var result = await _handler.TryHandleAsync(_httpContext, pgEx, CancellationToken.None);
+
+        // Assert
+        Assert.True(result);
+        Assert.Equal(expectedStatusCode, _httpContext.Response.StatusCode);
+
+        // Verify ProblemDetails was written with correct values
+        _mockProblemDetailsService.Verify(x => x.WriteAsync(
+            It.Is<ProblemDetailsContext>(ctx =>
+                ctx.HttpContext == _httpContext &&
+                ctx.ProblemDetails.Status == expectedStatusCode &&
+                ctx.ProblemDetails.Title == expectedTitle &&
+                ctx.ProblemDetails.Detail == expectedDetail &&
+                ctx.ProblemDetails.Type == $"https://httpstatuses.com/{expectedStatusCode}" &&
+                ctx.Exception == (shouldIncludeException ? pgEx : null)
+            )
+        ), Times.Once);
+
+        // Verify logging at appropriate level
+        _mockLogger.Verify(
+            x => x.Log(
+                expectedLogLevel,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => true),
+                pgEx,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
     [Fact]
     public async Task TryHandleAsync_InvalidOperationWithUserProfile_Returns400WithUserProfileRequired()
     {
