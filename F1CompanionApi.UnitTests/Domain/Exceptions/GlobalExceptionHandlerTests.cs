@@ -281,4 +281,244 @@ public class GlobalExceptionHandlerTests
             )
         ), Times.Once);
     }
+
+    // Custom Domain Exception Tests
+
+    [Fact]
+    public async Task TryHandleAsync_UserProfileNotFoundException_Returns400WithUserProfileRequired()
+    {
+        // Arrange
+        var ex = new UserProfileNotFoundException("account-123");
+
+        // Act
+        var result = await _handler.TryHandleAsync(_httpContext, ex, CancellationToken.None);
+
+        // Assert
+        Assert.True(result);
+        Assert.Equal(StatusCodes.Status400BadRequest, _httpContext.Response.StatusCode);
+
+        _mockProblemDetailsService.Verify(x => x.WriteAsync(
+            It.Is<ProblemDetailsContext>(ctx =>
+                ctx.ProblemDetails.Status == 400 &&
+                ctx.ProblemDetails.Title == "User Profile Required" &&
+                ctx.ProblemDetails.Detail == "Please complete your registration before accessing this resource." &&
+                ctx.ProblemDetails.Type == "https://httpstatuses.com/400" &&
+                ctx.Exception == null // 4xx does not include exception
+            )
+        ), Times.Once);
+
+        // Verify warning logging for 4xx
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => true),
+                ex,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task TryHandleAsync_TeamOwnershipException_Returns403WithPermissionDenied()
+    {
+        // Arrange
+        var ex = new TeamOwnershipException(teamId: 10, ownerId: 20, attemptedUserId: 30);
+
+        // Act
+        var result = await _handler.TryHandleAsync(_httpContext, ex, CancellationToken.None);
+
+        // Assert
+        Assert.True(result);
+        Assert.Equal(StatusCodes.Status403Forbidden, _httpContext.Response.StatusCode);
+
+        _mockProblemDetailsService.Verify(x => x.WriteAsync(
+            It.Is<ProblemDetailsContext>(ctx =>
+                ctx.ProblemDetails.Status == 403 &&
+                ctx.ProblemDetails.Title == "Permission Denied" &&
+                ctx.ProblemDetails.Detail == "You do not have permission to modify this team." &&
+                ctx.ProblemDetails.Type == "https://httpstatuses.com/403" &&
+                ctx.Exception == null // 4xx does not include exception
+            )
+        ), Times.Once);
+
+        // Verify warning logging for 4xx
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => true),
+                ex,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task TryHandleAsync_SlotOccupiedException_Returns409WithSlotAlreadyOccupied()
+    {
+        // Arrange
+        var ex = new SlotOccupiedException(position: 2, teamId: 100);
+
+        // Act
+        var result = await _handler.TryHandleAsync(_httpContext, ex, CancellationToken.None);
+
+        // Assert
+        Assert.True(result);
+        Assert.Equal(StatusCodes.Status409Conflict, _httpContext.Response.StatusCode);
+
+        _mockProblemDetailsService.Verify(x => x.WriteAsync(
+            It.Is<ProblemDetailsContext>(ctx =>
+                ctx.ProblemDetails.Status == 409 &&
+                ctx.ProblemDetails.Title == "Slot Already Occupied" &&
+                ctx.ProblemDetails.Detail == ex.Message &&
+                ctx.ProblemDetails.Type == "https://httpstatuses.com/409" &&
+                ctx.Exception == null // 4xx does not include exception
+            )
+        ), Times.Once);
+
+        // Verify warning logging for 4xx
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => true),
+                ex,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task TryHandleAsync_DuplicateTeamException_Returns409WithDuplicateTeam()
+    {
+        // Arrange
+        var ex = new DuplicateTeamException(userId: 10, existingTeamId: 100);
+
+        // Act
+        var result = await _handler.TryHandleAsync(_httpContext, ex, CancellationToken.None);
+
+        // Assert
+        Assert.True(result);
+        Assert.Equal(StatusCodes.Status409Conflict, _httpContext.Response.StatusCode);
+
+        _mockProblemDetailsService.Verify(x => x.WriteAsync(
+            It.Is<ProblemDetailsContext>(ctx =>
+                ctx.ProblemDetails.Status == 409 &&
+                ctx.ProblemDetails.Title == "Duplicate Team" &&
+                ctx.ProblemDetails.Detail == "You already have a team. Each user can only create one team." &&
+                ctx.ProblemDetails.Type == "https://httpstatuses.com/409" &&
+                ctx.Exception == null // 4xx does not include exception
+            )
+        ), Times.Once);
+
+        // Verify warning logging for 4xx
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => true),
+                ex,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task TryHandleAsync_EntityAlreadyOnTeamException_Returns409WithEntityAlreadyOnTeam()
+    {
+        // Arrange
+        var ex = new EntityAlreadyOnTeamException(entityId: 5, entityType: "driver", teamId: 100);
+
+        // Act
+        var result = await _handler.TryHandleAsync(_httpContext, ex, CancellationToken.None);
+
+        // Assert
+        Assert.True(result);
+        Assert.Equal(StatusCodes.Status409Conflict, _httpContext.Response.StatusCode);
+
+        _mockProblemDetailsService.Verify(x => x.WriteAsync(
+            It.Is<ProblemDetailsContext>(ctx =>
+                ctx.ProblemDetails.Status == 409 &&
+                ctx.ProblemDetails.Title == "Entity Already on Team" &&
+                ctx.ProblemDetails.Detail == ex.Message &&
+                ctx.ProblemDetails.Type == "https://httpstatuses.com/409" &&
+                ctx.Exception == null // 4xx does not include exception
+            )
+        ), Times.Once);
+
+        // Verify warning logging for 4xx
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => true),
+                ex,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task TryHandleAsync_TeamFullException_Returns400WithTeamFull()
+    {
+        // Arrange
+        var ex = new TeamFullException(teamId: 10, maxSlots: 5, entityType: "driver");
+
+        // Act
+        var result = await _handler.TryHandleAsync(_httpContext, ex, CancellationToken.None);
+
+        // Assert
+        Assert.True(result);
+        Assert.Equal(StatusCodes.Status400BadRequest, _httpContext.Response.StatusCode);
+
+        _mockProblemDetailsService.Verify(x => x.WriteAsync(
+            It.Is<ProblemDetailsContext>(ctx =>
+                ctx.ProblemDetails.Status == 400 &&
+                ctx.ProblemDetails.Title == "Team Full" &&
+                ctx.ProblemDetails.Detail == ex.Message &&
+                ctx.ProblemDetails.Type == "https://httpstatuses.com/400" &&
+                ctx.Exception == null // 4xx does not include exception
+            )
+        ), Times.Once);
+
+        // Verify warning logging for 4xx
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => true),
+                ex,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task TryHandleAsync_InvalidSlotPositionException_Returns400WithInvalidSlotPosition()
+    {
+        // Arrange
+        var ex = new InvalidSlotPositionException(position: 6, maxPosition: 4, entityType: "driver");
+
+        // Act
+        var result = await _handler.TryHandleAsync(_httpContext, ex, CancellationToken.None);
+
+        // Assert
+        Assert.True(result);
+        Assert.Equal(StatusCodes.Status400BadRequest, _httpContext.Response.StatusCode);
+
+        _mockProblemDetailsService.Verify(x => x.WriteAsync(
+            It.Is<ProblemDetailsContext>(ctx =>
+                ctx.ProblemDetails.Status == 400 &&
+                ctx.ProblemDetails.Title == "Invalid Slot Position" &&
+                ctx.ProblemDetails.Detail == ex.Message &&
+                ctx.ProblemDetails.Type == "https://httpstatuses.com/400" &&
+                ctx.Exception == null // 4xx does not include exception
+            )
+        ), Times.Once);
+
+        // Verify warning logging for 4xx
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => true),
+                ex,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
 }

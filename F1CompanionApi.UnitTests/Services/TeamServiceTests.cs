@@ -1,6 +1,7 @@
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Data;
 using F1CompanionApi.Data.Entities;
+using F1CompanionApi.Domain.Exceptions;
 using F1CompanionApi.Domain.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -123,10 +124,11 @@ public class TeamServiceTests
         };
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+        var exception = await Assert.ThrowsAsync<DuplicateTeamException>(
             () => service.CreateTeamAsync(request, user.Id)
         );
-        Assert.Equal("User already has a team", exception.Message);
+        Assert.Contains(user.Id.ToString(), exception.Message);
+        Assert.Contains(existingTeam.Id.ToString(), exception.Message);
     }
 
     [Fact]
@@ -142,10 +144,10 @@ public class TeamServiceTests
         };
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+        var exception = await Assert.ThrowsAsync<UserProfileNotFoundException>(
             () => service.CreateTeamAsync(request, 999)
         );
-        Assert.Equal("User not found", exception.Message);
+        Assert.Contains("999", exception.Message);
     }
 
     [Theory]
@@ -286,11 +288,11 @@ public class TeamServiceTests
         var result = await service.CreateTeamAsync(request1, user.Id);
 
         // Act & Assert - second request fails
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+        var exception = await Assert.ThrowsAsync<DuplicateTeamException>(
             () => service.CreateTeamAsync(request2, user.Id)
         );
 
-        Assert.Equal("User already has a team", exception.Message);
+        Assert.Equal(user.Id, exception.UserId);
         Assert.Equal("Team 1", result.Name);
 
         // Verify only one team exists
@@ -350,10 +352,12 @@ public class TeamServiceTests
         var driver = CreateTestDriver(context, "VER", "Max", "Verstappen");
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+        var exception = await Assert.ThrowsAsync<TeamOwnershipException>(
             () => service.AddDriverToTeamAsync(team.Id, driver.Id, 0, otherUser.Id)
         );
-        Assert.Equal("Cannot modify another user's team", exception.Message);
+        Assert.Equal(team.Id, exception.TeamId);
+        Assert.Equal(owner.Id, exception.OwnerId);
+        Assert.Equal(otherUser.Id, exception.AttemptedUserId);
     }
 
     [Theory]
@@ -371,10 +375,11 @@ public class TeamServiceTests
         var driver = CreateTestDriver(context, "VER", "Max", "Verstappen");
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+        var exception = await Assert.ThrowsAsync<InvalidSlotPositionException>(
             () => service.AddDriverToTeamAsync(team.Id, driver.Id, slotPosition, user.Id)
         );
-        Assert.Equal("Slot position must be between 0 and 4 for drivers", exception.Message);
+        Assert.Equal(slotPosition, exception.Position);
+        Assert.Contains("drivers", exception.Message);
     }
 
     [Fact]
@@ -397,10 +402,12 @@ public class TeamServiceTests
         var newDriver = CreateTestDriver(context, "NEW", "New", "Driver");
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+        var exception = await Assert.ThrowsAsync<TeamFullException>(
             () => service.AddDriverToTeamAsync(team.Id, newDriver.Id, 0, user.Id)
         );
-        Assert.Equal("Team cannot have more than 5 drivers", exception.Message);
+        Assert.Equal(team.Id, exception.TeamId);
+        Assert.Equal(5, exception.MaxSlots);
+        Assert.Equal("driver", exception.EntityType);
     }
 
     [Fact]
@@ -418,10 +425,11 @@ public class TeamServiceTests
         await service.AddDriverToTeamAsync(team.Id, driver1.Id, 0, user.Id);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+        var exception = await Assert.ThrowsAsync<SlotOccupiedException>(
             () => service.AddDriverToTeamAsync(team.Id, driver2.Id, 0, user.Id)
         );
-        Assert.Equal("Slot position 0 is already occupied", exception.Message);
+        Assert.Equal(0, exception.Position);
+        Assert.Equal(team.Id, exception.TeamId);
     }
 
     [Fact]
@@ -438,10 +446,12 @@ public class TeamServiceTests
         await service.AddDriverToTeamAsync(team.Id, driver.Id, 0, user.Id);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+        var exception = await Assert.ThrowsAsync<EntityAlreadyOnTeamException>(
             () => service.AddDriverToTeamAsync(team.Id, driver.Id, 1, user.Id)
         );
-        Assert.Equal("Driver is already on this team", exception.Message);
+        Assert.Equal(driver.Id, exception.EntityId);
+        Assert.Equal("driver", exception.EntityType);
+        Assert.Equal(team.Id, exception.TeamId);
     }
 
     [Fact]
@@ -517,10 +527,12 @@ public class TeamServiceTests
         await service.AddDriverToTeamAsync(team.Id, driver.Id, 0, owner.Id);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+        var exception = await Assert.ThrowsAsync<TeamOwnershipException>(
             () => service.RemoveDriverFromTeamAsync(team.Id, 0, otherUser.Id)
         );
-        Assert.Equal("Cannot modify another user's team", exception.Message);
+        Assert.Equal(team.Id, exception.TeamId);
+        Assert.Equal(owner.Id, exception.OwnerId);
+        Assert.Equal(otherUser.Id, exception.AttemptedUserId);
     }
 
     [Fact]
@@ -594,10 +606,12 @@ public class TeamServiceTests
         var constructor = CreateTestConstructor(context, "Red Bull Racing");
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+        var exception = await Assert.ThrowsAsync<TeamOwnershipException>(
             () => service.AddConstructorToTeamAsync(team.Id, constructor.Id, 0, otherUser.Id)
         );
-        Assert.Equal("Cannot modify another user's team", exception.Message);
+        Assert.Equal(team.Id, exception.TeamId);
+        Assert.Equal(owner.Id, exception.OwnerId);
+        Assert.Equal(otherUser.Id, exception.AttemptedUserId);
     }
 
     [Theory]
@@ -615,10 +629,11 @@ public class TeamServiceTests
         var constructor = CreateTestConstructor(context, "Red Bull Racing");
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+        var exception = await Assert.ThrowsAsync<InvalidSlotPositionException>(
             () => service.AddConstructorToTeamAsync(team.Id, constructor.Id, slotPosition, user.Id)
         );
-        Assert.Equal("Slot position must be between 0 and 1 for constructors", exception.Message);
+        Assert.Equal(slotPosition, exception.Position);
+        Assert.Contains("constructors", exception.Message);
     }
 
     [Fact]
@@ -640,10 +655,12 @@ public class TeamServiceTests
         var newConstructor = CreateTestConstructor(context, "Mercedes");
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+        var exception = await Assert.ThrowsAsync<TeamFullException>(
             () => service.AddConstructorToTeamAsync(team.Id, newConstructor.Id, 0, user.Id)
         );
-        Assert.Equal("Team cannot have more than 2 constructors", exception.Message);
+        Assert.Equal(team.Id, exception.TeamId);
+        Assert.Equal(2, exception.MaxSlots);
+        Assert.Equal("constructor", exception.EntityType);
     }
 
     [Fact]
@@ -661,10 +678,11 @@ public class TeamServiceTests
         await service.AddConstructorToTeamAsync(team.Id, constructor1.Id, 0, user.Id);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+        var exception = await Assert.ThrowsAsync<SlotOccupiedException>(
             () => service.AddConstructorToTeamAsync(team.Id, constructor2.Id, 0, user.Id)
         );
-        Assert.Equal("Slot position 0 is already occupied", exception.Message);
+        Assert.Equal(0, exception.Position);
+        Assert.Equal(team.Id, exception.TeamId);
     }
 
     [Fact]
@@ -681,10 +699,12 @@ public class TeamServiceTests
         await service.AddConstructorToTeamAsync(team.Id, constructor.Id, 0, user.Id);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+        var exception = await Assert.ThrowsAsync<EntityAlreadyOnTeamException>(
             () => service.AddConstructorToTeamAsync(team.Id, constructor.Id, 1, user.Id)
         );
-        Assert.Equal("Constructor is already on this team", exception.Message);
+        Assert.Equal(constructor.Id, exception.EntityId);
+        Assert.Equal("constructor", exception.EntityType);
+        Assert.Equal(team.Id, exception.TeamId);
     }
 
     [Fact]
@@ -760,10 +780,12 @@ public class TeamServiceTests
         await service.AddConstructorToTeamAsync(team.Id, constructor.Id, 0, owner.Id);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+        var exception = await Assert.ThrowsAsync<TeamOwnershipException>(
             () => service.RemoveConstructorFromTeamAsync(team.Id, 0, otherUser.Id)
         );
-        Assert.Equal("Cannot modify another user's team", exception.Message);
+        Assert.Equal(team.Id, exception.TeamId);
+        Assert.Equal(owner.Id, exception.OwnerId);
+        Assert.Equal(otherUser.Id, exception.AttemptedUserId);
     }
 
     [Fact]

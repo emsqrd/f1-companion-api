@@ -2,6 +2,7 @@ using F1CompanionApi.Api.Mappers;
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Data;
 using F1CompanionApi.Data.Entities;
+using F1CompanionApi.Domain.Exceptions;
 using Microsoft.EntityFrameworkCore;
 
 namespace F1CompanionApi.Domain.Services;
@@ -43,7 +44,7 @@ public class TeamService : ITeamService
         if (existingTeam is not null)
         {
             _logger.LogWarning("User {UserId} already has a team {TeamId}", userId, existingTeam.Id);
-            throw new InvalidOperationException("User already has a team");
+            throw new DuplicateTeamException(userId, existingTeam.Id);
         }
 
         // Get user profile from owner name
@@ -51,7 +52,7 @@ public class TeamService : ITeamService
         if (user is null)
         {
             _logger.LogError("User {UserId} not found", userId);
-            throw new InvalidOperationException("User not found");
+            throw new UserProfileNotFoundException(userId.ToString());
         }
 
         var team = new Team
@@ -112,35 +113,35 @@ public class TeamService : ITeamService
         if (team.UserId != userId)
         {
             _logger.LogWarning("User {UserId} attempted to modify team {TeamId} owned by {OwnerId}", userId, teamId, team.UserId);
-            throw new InvalidOperationException("Cannot modify another user's team");
+            throw new TeamOwnershipException(teamId, team.UserId, userId);
         }
 
         // Validate slot position range
         if (slotPosition < 0 || slotPosition > 4)
         {
             _logger.LogWarning("Invalid slot position {SlotPosition} for driver", slotPosition);
-            throw new InvalidOperationException("Slot position must be between 0 and 4 for drivers");
+            throw new InvalidSlotPositionException(slotPosition, 4, "driver");
         }
 
         // Validate driver limit
         if (team.TeamDrivers.Count >= 5)
         {
             _logger.LogWarning("Team {TeamId} already has maximum drivers", teamId);
-            throw new InvalidOperationException("Team cannot have more than 5 drivers");
+            throw new TeamFullException(teamId, 5, "driver");
         }
 
         // Check if slot is already occupied
         if (team.TeamDrivers.Any(td => td.SlotPosition == slotPosition))
         {
             _logger.LogWarning("Slot {SlotPosition} already occupied on team {TeamId}", slotPosition, teamId);
-            throw new InvalidOperationException($"Slot position {slotPosition} is already occupied");
+            throw new SlotOccupiedException(slotPosition, teamId);
         }
 
         // Check if driver already on team
         if (team.TeamDrivers.Any(td => td.DriverId == driverId))
         {
             _logger.LogWarning("Driver {DriverId} already on team {TeamId}", driverId, teamId);
-            throw new InvalidOperationException("Driver is already on this team");
+            throw new EntityAlreadyOnTeamException(driverId, "driver", teamId);
         }
 
         // Verify driver exists
@@ -182,7 +183,7 @@ public class TeamService : ITeamService
         if (team.UserId != userId)
         {
             _logger.LogWarning("User {UserId} attempted to modify team {TeamId} owned by {OwnerId}", userId, teamId, team.UserId);
-            throw new InvalidOperationException("Cannot modify another user's team");
+            throw new TeamOwnershipException(teamId, team.UserId, userId);
         }
 
         var teamDriver = await _dbContext.TeamDrivers
@@ -218,35 +219,35 @@ public class TeamService : ITeamService
         if (team.UserId != userId)
         {
             _logger.LogWarning("User {UserId} attempted to modify team {TeamId} owned by {OwnerId}", userId, teamId, team.UserId);
-            throw new InvalidOperationException("Cannot modify another user's team");
+            throw new TeamOwnershipException(teamId, team.UserId, userId);
         }
 
         // Validate slot position range
         if (slotPosition < 0 || slotPosition > 1)
         {
             _logger.LogWarning("Invalid slot position {SlotPosition} for constructor", slotPosition);
-            throw new InvalidOperationException("Slot position must be between 0 and 1 for constructors");
+            throw new InvalidSlotPositionException(slotPosition, 1, "constructor");
         }
 
         // Validate constructor limit
         if (team.TeamConstructors.Count >= 2)
         {
             _logger.LogWarning("Team {TeamId} already has maximum constructors", teamId);
-            throw new InvalidOperationException("Team cannot have more than 2 constructors");
+            throw new TeamFullException(teamId, 2, "constructor");
         }
 
         // Check if slot is already occupied
         if (team.TeamConstructors.Any(tc => tc.SlotPosition == slotPosition))
         {
             _logger.LogWarning("Slot {SlotPosition} already occupied on team {TeamId}", slotPosition, teamId);
-            throw new InvalidOperationException($"Slot position {slotPosition} is already occupied");
+            throw new SlotOccupiedException(slotPosition, teamId);
         }
 
         // Check if constructor already on team
         if (team.TeamConstructors.Any(tc => tc.ConstructorId == constructorId))
         {
             _logger.LogWarning("Constructor {ConstructorId} already on team {TeamId}", constructorId, teamId);
-            throw new InvalidOperationException("Constructor is already on this team");
+            throw new EntityAlreadyOnTeamException(constructorId, "constructor", teamId);
         }
 
         // Verify constructor exists
@@ -288,7 +289,7 @@ public class TeamService : ITeamService
         if (team.UserId != userId)
         {
             _logger.LogWarning("User {UserId} attempted to modify team {TeamId} owned by {OwnerId}", userId, teamId, team.UserId);
-            throw new InvalidOperationException("Cannot modify another user's team");
+            throw new TeamOwnershipException(teamId, team.UserId, userId);
         }
 
         var teamConstructor = await _dbContext.TeamConstructors

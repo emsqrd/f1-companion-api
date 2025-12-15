@@ -1,6 +1,7 @@
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Data;
 using F1CompanionApi.Data.Entities;
+using F1CompanionApi.Domain.Exceptions;
 using F1CompanionApi.Domain.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -109,10 +110,10 @@ public class LeagueServiceTests
         };
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+        var exception = await Assert.ThrowsAsync<UserProfileNotFoundException>(
             () => service.CreateLeagueAsync(request, 999)
         );
-        Assert.Contains("Owner with id 999 not found", exception.Message);
+        Assert.Contains("999", exception.Message);
     }
 
     [Fact]
