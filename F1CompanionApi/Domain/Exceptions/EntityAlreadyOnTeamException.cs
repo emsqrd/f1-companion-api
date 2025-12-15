@@ -10,17 +10,17 @@ public class EntityAlreadyOnTeamException : Exception
     /// <summary>
     /// Gets the ID of the entity (driver or constructor) that is already on the team.
     /// </summary>
-    public int EntityId { get; }
+    public int EntityId { get; init; }
 
     /// <summary>
     /// Gets the type of entity (e.g., "driver" or "constructor").
     /// </summary>
-    public string EntityType { get; }
+    public string EntityType { get; init; }
 
     /// <summary>
     /// Gets the ID of the team that already contains this entity.
     /// </summary>
-    public int TeamId { get; }
+    public int TeamId { get; init; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EntityAlreadyOnTeamException"/> class.

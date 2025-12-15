@@ -29,12 +29,12 @@ public class GlobalExceptionHandler : IExceptionHandler
         var (statusCode, title, detail) = exception switch
         {
             // Custom Domain Exceptions - Authentication/Authorization
-            UserProfileNotFoundException ex =>
+            UserProfileNotFoundException _ =>
                 (StatusCodes.Status400BadRequest,
                  "User Profile Required",
                  "Please complete your registration before accessing this resource."),
 
-            TeamOwnershipException ex =>
+            TeamOwnershipException _ =>
                 (StatusCodes.Status403Forbidden,
                  "Permission Denied",
                  "You do not have permission to modify this team."),
@@ -45,7 +45,7 @@ public class GlobalExceptionHandler : IExceptionHandler
                  "Slot Already Occupied",
                  ex.Message),
 
-            DuplicateTeamException ex =>
+            DuplicateTeamException _ =>
                 (StatusCodes.Status409Conflict,
                  "Duplicate Team",
                  "You already have a team. Each user can only create one team."),

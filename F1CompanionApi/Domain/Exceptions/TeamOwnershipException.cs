@@ -10,17 +10,17 @@ public class TeamOwnershipException : Exception
     /// <summary>
     /// Gets the ID of the team that was attempted to be modified.
     /// </summary>
-    public int TeamId { get; }
+    public int TeamId { get; init; }
 
     /// <summary>
     /// Gets the ID of the actual owner of the team.
     /// </summary>
-    public int OwnerId { get; }
+    public int OwnerId { get; init; }
 
     /// <summary>
     /// Gets the ID of the user who attempted to modify the team.
     /// </summary>
-    public int AttemptedUserId { get; }
+    public int AttemptedUserId { get; init; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TeamOwnershipException"/> class.

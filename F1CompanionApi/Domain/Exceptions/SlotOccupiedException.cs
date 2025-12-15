@@ -10,12 +10,12 @@ public class SlotOccupiedException : Exception
     /// <summary>
     /// Gets the position of the slot that is already occupied.
     /// </summary>
-    public int Position { get; }
+    public int Position { get; init; }
 
     /// <summary>
     /// Gets the ID of the team containing the occupied slot.
     /// </summary>
-    public int TeamId { get; }
+    public int TeamId { get; init; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SlotOccupiedException"/> class.

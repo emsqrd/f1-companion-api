@@ -10,17 +10,17 @@ public class TeamFullException : Exception
     /// <summary>
     /// Gets the ID of the team that is full.
     /// </summary>
-    public int TeamId { get; }
+    public int TeamId { get; init; }
 
     /// <summary>
     /// Gets the maximum number of slots allowed for this entity type.
     /// </summary>
-    public int MaxSlots { get; }
+    public int MaxSlots { get; init; }
 
     /// <summary>
     /// Gets the type of entity (e.g., "driver" or "constructor").
     /// </summary>
-    public string EntityType { get; }
+    public string EntityType { get; init; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TeamFullException"/> class.

@@ -10,7 +10,7 @@ public class UserProfileNotFoundException : Exception
     /// <summary>
     /// Gets the account ID of the user whose profile was not found.
     /// </summary>
-    public string AccountId { get; }
+    public string AccountId { get; init; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="UserProfileNotFoundException"/> class.

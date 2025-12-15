@@ -10,17 +10,17 @@ public class InvalidSlotPositionException : Exception
     /// <summary>
     /// Gets the invalid position that was provided.
     /// </summary>
-    public int Position { get; }
+    public int Position { get; init; }
 
     /// <summary>
     /// Gets the maximum valid position for this entity type.
     /// </summary>
-    public int MaxPosition { get; }
+    public int MaxPosition { get; init; }
 
     /// <summary>
     /// Gets the type of entity (e.g., "driver" or "constructor").
     /// </summary>
-    public string EntityType { get; }
+    public string EntityType { get; init; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="InvalidSlotPositionException"/> class.
