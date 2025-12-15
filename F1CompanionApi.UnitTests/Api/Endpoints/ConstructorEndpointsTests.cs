@@ -131,6 +131,111 @@ public class ConstructorEndpointsTests
         Assert.Equal(StatusCodes.Status404NotFound, problemResult.StatusCode);
     }
 
+    [Fact]
+    public async Task GetConstructorsAsync_EmptyCollection_ReturnsOkWithEmptyList()
+    {
+        // Arrange
+        var emptyConstructors = new List<ConstructorResponse>();
+
+        _mockConstructorService.Setup(x => x.GetConstructorsAsync(null))
+            .ReturnsAsync(emptyConstructors);
+
+        // Act
+        var result = await InvokeGetConstructorsAsync(null);
+
+        // Assert
+        Assert.IsType<Ok<IEnumerable<ConstructorResponse>>>(result);
+        var okResult = (Ok<IEnumerable<ConstructorResponse>>)result;
+        Assert.Empty(okResult.Value!);
+    }
+
+    [Fact]
+    public async Task GetConstructorsAsync_WithActiveOnlyFalse_ReturnsAllConstructors()
+    {
+        // Arrange
+        var constructors = new List<ConstructorResponse>
+        {
+            new ConstructorResponse
+            {
+                Id = 1,
+                Type = "constructor",
+                Name = "McLaren",
+                FullName = "McLaren F1 Team",
+                CountryAbbreviation = "GBR",
+                IsActive = true
+            },
+            new ConstructorResponse
+            {
+                Id = 2,
+                Type = "constructor",
+                Name = "Williams",
+                FullName = "Williams Racing",
+                CountryAbbreviation = "GBR",
+                IsActive = false
+            }
+        };
+
+        _mockConstructorService.Setup(x => x.GetConstructorsAsync(false))
+            .ReturnsAsync(constructors);
+
+        // Act
+        var result = await InvokeGetConstructorsAsync(false);
+
+        // Assert
+        Assert.IsType<Ok<IEnumerable<ConstructorResponse>>>(result);
+        var okResult = (Ok<IEnumerable<ConstructorResponse>>)result;
+        Assert.Equal(2, okResult.Value!.Count());
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(int.MaxValue)]
+    public async Task GetConstructorByIdAsync_BoundaryValues_ReturnsOkOrProblem(int id)
+    {
+        // Arrange
+        _mockConstructorService.Setup(x => x.GetConstructorByIdAsync(id))
+            .ReturnsAsync((ConstructorResponse?)null);
+
+        // Act
+        var result = await InvokeGetConstructorByIdAsync(id);
+
+        // Assert
+        Assert.IsType<ProblemHttpResult>(result);
+        var problemResult = (ProblemHttpResult)result;
+        Assert.Equal(StatusCodes.Status404NotFound, problemResult.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetConstructorByIdAsync_ValidConstructor_ReturnsCorrectDataStructure()
+    {
+        // Arrange
+        var constructor = new ConstructorResponse
+        {
+            Id = 1,
+            Type = "constructor",
+            Name = "Red Bull",
+            FullName = "Oracle Red Bull Racing",
+            CountryAbbreviation = "AUT",
+            IsActive = true
+        };
+
+        _mockConstructorService.Setup(x => x.GetConstructorByIdAsync(1))
+            .ReturnsAsync(constructor);
+
+        // Act
+        var result = await InvokeGetConstructorByIdAsync(1);
+
+        // Assert
+        Assert.IsType<Ok<ConstructorResponse>>(result);
+        var okResult = (Ok<ConstructorResponse>)result;
+        Assert.NotNull(okResult.Value);
+        Assert.Equal("constructor", okResult.Value.Type);
+        Assert.NotEmpty(okResult.Value.Name);
+        Assert.NotEmpty(okResult.Value.FullName);
+        Assert.NotEmpty(okResult.Value.CountryAbbreviation);
+    }
+
     private async Task<IResult> InvokeGetConstructorsAsync(bool? activeOnly)
     {
         var method = typeof(ConstructorEndpoints).GetMethod(

@@ -130,6 +130,110 @@ public class DriverEndpointsTests
         Assert.Equal(StatusCodes.Status404NotFound, problemResult.StatusCode);
     }
 
+    [Fact]
+    public async Task GetDriversAsync_EmptyCollection_ReturnsOkWithEmptyList()
+    {
+        // Arrange
+        var emptyDrivers = new List<DriverResponse>();
+
+        _mockDriverService.Setup(x => x.GetDriversAsync(null))
+            .ReturnsAsync(emptyDrivers);
+
+        // Act
+        var result = await InvokeGetDriversAsync(null);
+
+        // Assert
+        Assert.IsType<Ok<IEnumerable<DriverResponse>>>(result);
+        var okResult = (Ok<IEnumerable<DriverResponse>>)result;
+        Assert.Empty(okResult.Value!);
+    }
+
+    [Fact]
+    public async Task GetDriversAsync_WithActiveOnlyFalse_ReturnsAllDrivers()
+    {
+        // Arrange
+        var drivers = new List<DriverResponse>
+        {
+            new DriverResponse
+            {
+                Id = 1,
+                Type = "driver",
+                FirstName = "Oscar",
+                LastName = "Piastri",
+                Abbreviation = "PIA",
+                CountryAbbreviation = "AUS"
+            },
+            new DriverResponse
+            {
+                Id = 2,
+                Type = "driver",
+                FirstName = "Fernando",
+                LastName = "Alonso",
+                Abbreviation = "ALO",
+                CountryAbbreviation = "ESP"
+            }
+        };
+
+        _mockDriverService.Setup(x => x.GetDriversAsync(false))
+            .ReturnsAsync(drivers);
+
+        // Act
+        var result = await InvokeGetDriversAsync(false);
+
+        // Assert
+        Assert.IsType<Ok<IEnumerable<DriverResponse>>>(result);
+        var okResult = (Ok<IEnumerable<DriverResponse>>)result;
+        Assert.Equal(2, okResult.Value!.Count());
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(int.MaxValue)]
+    public async Task GetDriverByIdAsync_BoundaryValues_ReturnsOkOrProblem(int id)
+    {
+        // Arrange
+        _mockDriverService.Setup(x => x.GetDriverByIdAsync(id))
+            .ReturnsAsync((DriverResponse?)null);
+
+        // Act
+        var result = await InvokeGetDriverByIdAsync(id);
+
+        // Assert
+        Assert.IsType<ProblemHttpResult>(result);
+        var problemResult = (ProblemHttpResult)result;
+        Assert.Equal(StatusCodes.Status404NotFound, problemResult.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetDriverByIdAsync_ValidDriver_ReturnsCorrectDataStructure()
+    {
+        // Arrange
+        var driver = new DriverResponse
+        {
+            Id = 1,
+            Type = "driver",
+            FirstName = "Max",
+            LastName = "Verstappen",
+            Abbreviation = "VER",
+            CountryAbbreviation = "NED"
+        };
+
+        _mockDriverService.Setup(x => x.GetDriverByIdAsync(1))
+            .ReturnsAsync(driver);
+
+        // Act
+        var result = await InvokeGetDriverByIdAsync(1);
+
+        // Assert
+        Assert.IsType<Ok<DriverResponse>>(result);
+        var okResult = (Ok<DriverResponse>)result;
+        Assert.NotNull(okResult.Value);
+        Assert.Equal("driver", okResult.Value.Type);
+        Assert.NotEmpty(okResult.Value.Abbreviation);
+        Assert.NotEmpty(okResult.Value.CountryAbbreviation);
+    }
+
     private async Task<IResult> InvokeGetDriversAsync(bool? activeOnly)
     {
         var method = typeof(DriverEndpoints).GetMethod(
