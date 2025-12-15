@@ -190,7 +190,7 @@ public class DriverEndpointsTests
     [InlineData(0)]
     [InlineData(-1)]
     [InlineData(int.MaxValue)]
-    public async Task GetDriverByIdAsync_BoundaryValues_ReturnsOkOrProblem(int id)
+    public async Task GetDriverByIdAsync_BoundaryValues_ReturnsProblem(int id)
     {
         // Arrange
         _mockDriverService.Setup(x => x.GetDriverByIdAsync(id))

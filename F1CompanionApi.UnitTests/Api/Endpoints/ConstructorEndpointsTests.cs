@@ -191,7 +191,7 @@ public class ConstructorEndpointsTests
     [InlineData(0)]
     [InlineData(-1)]
     [InlineData(int.MaxValue)]
-    public async Task GetConstructorByIdAsync_BoundaryValues_ReturnsOkOrProblem(int id)
+    public async Task GetConstructorByIdAsync_BoundaryValues_ReturnsProblem(int id)
     {
         // Arrange
         _mockConstructorService.Setup(x => x.GetConstructorByIdAsync(id))
