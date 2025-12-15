@@ -1,6 +1,7 @@
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Data;
 using F1CompanionApi.Data.Entities;
+using F1CompanionApi.Domain.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -76,7 +77,7 @@ public class UserProfileService : IUserProfileService
         if (profile is null)
         {
             _logger.LogError("User profile not found for authenticated user {UserId}", userId);
-            throw new InvalidOperationException("User profile not found for authenticated user");
+            throw new UserProfileNotFoundException(userId);
         }
 
         return profile;

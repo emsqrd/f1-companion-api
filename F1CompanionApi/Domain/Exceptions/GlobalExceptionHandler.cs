@@ -28,7 +28,45 @@ public class GlobalExceptionHandler : IExceptionHandler
         // Handle different exception types
         var (statusCode, title, detail) = exception switch
         {
-            // Authentication/Authorization
+            // Custom Domain Exceptions - Authentication/Authorization
+            UserProfileNotFoundException _ =>
+                (StatusCodes.Status400BadRequest,
+                 "User Profile Required",
+                 "Please complete your registration before accessing this resource."),
+
+            TeamOwnershipException _ =>
+                (StatusCodes.Status403Forbidden,
+                 "Permission Denied",
+                 "You do not have permission to modify this team."),
+
+            // Custom Domain Exceptions - Resource Conflicts
+            SlotOccupiedException ex =>
+                (StatusCodes.Status409Conflict,
+                 "Slot Already Occupied",
+                 ex.Message),
+
+            DuplicateTeamException _ =>
+                (StatusCodes.Status409Conflict,
+                 "Duplicate Team",
+                 "You already have a team. Each user can only create one team."),
+
+            EntityAlreadyOnTeamException ex =>
+                (StatusCodes.Status409Conflict,
+                 "Entity Already on Team",
+                 ex.Message),
+
+            // Custom Domain Exceptions - Validation Failures
+            TeamFullException ex =>
+                (StatusCodes.Status400BadRequest,
+                 "Team Full",
+                 ex.Message),
+
+            InvalidSlotPositionException ex =>
+                (StatusCodes.Status400BadRequest,
+                 "Invalid Slot Position",
+                 ex.Message),
+
+            // Generic Authentication/Authorization (legacy - to be removed after migration)
             InvalidOperationException ex when ex.Message.Contains("User profile not found") =>
                 (StatusCodes.Status400BadRequest,
                  "User Profile Required",
@@ -52,7 +90,7 @@ public class GlobalExceptionHandler : IExceptionHandler
                  "Concurrency Conflict",
                  "The data was modified by another user. Please refresh and try again."),
 
-            // Business logic violations
+            // Business logic violations (generic fallback)
             InvalidOperationException ex =>
                 (StatusCodes.Status400BadRequest,
                  "Invalid Operation",

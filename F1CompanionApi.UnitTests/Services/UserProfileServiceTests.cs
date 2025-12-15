@@ -1,6 +1,7 @@
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Data;
 using F1CompanionApi.Data.Entities;
+using F1CompanionApi.Domain.Exceptions;
 using F1CompanionApi.Domain.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -214,10 +215,10 @@ public class UserProfileServiceTests
         var service = new UserProfileService(context, authService.Object, _mockLogger.Object);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+        var exception = await Assert.ThrowsAsync<UserProfileNotFoundException>(
             () => service.GetRequiredCurrentUserProfileAsync()
         );
-        Assert.Contains("User profile not found for authenticated user", exception.Message);
+        Assert.Contains(TestAccountId, exception.Message);
     }
 
     [Fact]

@@ -1,6 +1,7 @@
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Data;
 using F1CompanionApi.Data.Entities;
+using F1CompanionApi.Domain.Exceptions;
 using F1CompanionApi.Extensions;
 using Microsoft.EntityFrameworkCore;
 
@@ -43,7 +44,7 @@ public class LeagueService : ILeagueService
         if (owner is null)
         {
             _logger.LogError("Owner {OwnerId} not found when creating league", ownerId);
-            throw new InvalidOperationException($"Owner with id {ownerId} not found");
+            throw new UserProfileNotFoundException(ownerId.ToString());
         }
 
         var newLeague = new League
