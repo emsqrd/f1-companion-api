@@ -1,3 +1,8 @@
+---
+description: "Sentry integration for .NET 9 ASP.NET Core Minimal API. Error tracking, performance monitoring, and structured logging with Sentry.AspNetCore."
+applyTo: "**/*.cs, **/appsettings*.json, **/Program.cs"
+---
+
 # Sentry Integration Guidelines for .NET API
 
 ## Overview

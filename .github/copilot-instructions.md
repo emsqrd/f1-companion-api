@@ -1,3 +1,8 @@
+---
+description: "Main instructions for .NET 9 Minimal API application with Supabase authentication and PostgreSQL. Clean architecture with endpoints, services, and data access separation."
+applyTo: "**/*.cs, **/*.csproj, **/*.json, **/Program.cs"
+---
+
 # F1 Fantasy Sports API - AI Coding Agent Instructions
 
 ## Architecture Overview
