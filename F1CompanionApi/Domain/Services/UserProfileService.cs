@@ -46,7 +46,9 @@ public class UserProfileService : IUserProfileService
     {
         _logger.LogDebug("Fetching user profile for account {AccountId}", accountId);
         var profile = await _dbContext
-            .UserProfiles.Include(x => x.Account)
+            .UserProfiles
+                .Include(x => x.Account)
+                .Include(x => x.Team)
             .FirstOrDefaultAsync(x => x.AccountId == accountId);
 
         if (profile is null)

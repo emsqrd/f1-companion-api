@@ -16,6 +16,13 @@ builder.WebHost.UseSentry(options =>
     options.Debug = builder.Configuration.GetValue<bool>("Sentry:Debug");
     options.Environment = builder.Configuration["Sentry:Environment"] ?? builder.Environment.EnvironmentName;
 
+    // Enable Spotlight for local development
+    if (builder.Environment.IsDevelopment())
+    {
+        options.EnableSpotlight = true;
+        options.SpotlightUrl = "http://localhost:8969/stream";
+    }
+
     // Enable structured logging
     options.Experimental.EnableLogs = true;
 

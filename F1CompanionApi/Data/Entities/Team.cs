@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace F1CompanionApi.Data.Entities;
 
 /// <summary>
@@ -8,6 +10,7 @@ public class Team : UserOwnedEntity
     public required string Name { get; set; }
     public int UserId { get; set; } // FK
 
+    [JsonIgnore]
     public UserProfile Owner { get; set; } = null!;
     public ICollection<TeamDriver> TeamDrivers { get; set; } = new List<TeamDriver>();
     public ICollection<TeamConstructor> TeamConstructors { get; set; } = new List<TeamConstructor>();
