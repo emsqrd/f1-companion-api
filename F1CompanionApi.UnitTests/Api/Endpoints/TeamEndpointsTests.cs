@@ -126,13 +126,13 @@ public class TeamEndpointsTests
     public async Task CreateTeamAsync_ValidRequest_ReturnsCreatedWithTeam()
     {
         // Arrange
-        var user = new UserProfile
+        var user = new UserProfileResponse
         {
             Id = 1,
-            AccountId = "test-account",
             Email = "user@test.com",
             FirstName = "John",
-            LastName = "Doe"
+            LastName = "Doe",
+            CreatedAt = DateTime.UtcNow
         };
 
         var request = new CreateTeamRequest
@@ -169,13 +169,13 @@ public class TeamEndpointsTests
     public async Task CreateTeamAsync_UserAlreadyHasTeam_ReturnsBadRequest()
     {
         // Arrange
-        var user = new UserProfile
+        var user = new UserProfileResponse
         {
             Id = 1,
-            AccountId = "test-account",
             Email = "user@test.com",
             FirstName = "John",
-            LastName = "Doe"
+            LastName = "Doe",
+            CreatedAt = DateTime.UtcNow
         };
 
         var request = new CreateTeamRequest
@@ -204,13 +204,13 @@ public class TeamEndpointsTests
     public async Task CreateTeamAsync_UserNotFound_ReturnsBadRequest()
     {
         // Arrange
-        var user = new UserProfile
+        var user = new UserProfileResponse
         {
             Id = 1,
-            AccountId = "test-account",
             Email = "user@test.com",
             FirstName = "John",
-            LastName = "Doe"
+            LastName = "Doe",
+            CreatedAt = DateTime.UtcNow
         };
 
         var request = new CreateTeamRequest

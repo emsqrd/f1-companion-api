@@ -14,6 +14,8 @@ public class UserProfile
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
     public string? AvatarUrl { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 
     //TODO: Remove this when implementing DTOs
     [JsonIgnore]

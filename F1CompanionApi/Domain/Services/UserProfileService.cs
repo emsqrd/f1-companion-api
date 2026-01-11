@@ -1,3 +1,4 @@
+using F1CompanionApi.Api.Mappers;
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Data;
 using F1CompanionApi.Data.Entities;
@@ -9,9 +10,9 @@ namespace F1CompanionApi.Domain.Services;
 
 public interface IUserProfileService
 {
-    Task<UserProfile?> GetUserProfileByAccountIdAsync(string accountId);
-    Task<UserProfile?> GetCurrentUserProfileAsync();
-    Task<UserProfile> GetRequiredCurrentUserProfileAsync();
+    Task<UserProfileResponse?> GetUserProfileByAccountIdAsync(string accountId);
+    Task<UserProfileResponse?> GetCurrentUserProfileAsync();
+    Task<UserProfileResponse> GetRequiredCurrentUserProfileAsync();
     Task<UserProfile> CreateUserProfileAsync(
         string accountId,
         string email,
@@ -42,7 +43,7 @@ public class UserProfileService : IUserProfileService
         _logger = logger;
     }
 
-    public async Task<UserProfile?> GetUserProfileByAccountIdAsync(string accountId)
+    public async Task<UserProfileResponse?> GetUserProfileByAccountIdAsync(string accountId)
     {
         _logger.LogDebug("Fetching user profile for account {AccountId}", accountId);
         var profile = await _dbContext
@@ -54,12 +55,13 @@ public class UserProfileService : IUserProfileService
         if (profile is null)
         {
             _logger.LogDebug("User profile not found for account {AccountId}", accountId);
+            return null;
         }
 
-        return profile;
+        return profile.ToResponseModel();
     }
 
-    public async Task<UserProfile?> GetCurrentUserProfileAsync()
+    public async Task<UserProfileResponse?> GetCurrentUserProfileAsync()
     {
         var userId = _authService.GetUserId();
         if (userId is null)
@@ -71,7 +73,7 @@ public class UserProfileService : IUserProfileService
         return await GetUserProfileByAccountIdAsync(userId);
     }
 
-    public async Task<UserProfile> GetRequiredCurrentUserProfileAsync()
+    public async Task<UserProfileResponse> GetRequiredCurrentUserProfileAsync()
     {
         var userId = _authService.GetRequiredUserId();
         var profile = await GetUserProfileByAccountIdAsync(userId);
@@ -116,6 +118,7 @@ public class UserProfileService : IUserProfileService
                 AccountId = accountId,
                 Email = email,
                 DisplayName = displayName,
+                CreatedAt = DateTime.UtcNow,
             };
 
             _dbContext.UserProfiles.Add(userProfile);
@@ -143,9 +146,9 @@ public class UserProfileService : IUserProfileService
     {
         _logger.LogDebug("Updating user profile {ProfileId}", updateUserProfileRequest.Id);
 
-        var existingUserProfile = await _dbContext.UserProfiles.FindAsync(
-            updateUserProfileRequest.Id
-        );
+        var existingUserProfile = await _dbContext.UserProfiles
+            .Include(x => x.Team)
+            .FirstOrDefaultAsync(x => x.Id == updateUserProfileRequest.Id);
 
         if (existingUserProfile is null)
         {
@@ -169,18 +172,12 @@ public class UserProfileService : IUserProfileService
         if (updateUserProfileRequest.AvatarUrl is not null)
             existingUserProfile.AvatarUrl = updateUserProfileRequest.AvatarUrl;
 
+        existingUserProfile.UpdatedAt = DateTime.UtcNow;
+
         await _dbContext.SaveChangesAsync();
 
         _logger.LogInformation("Successfully updated user profile {ProfileId}", existingUserProfile.Id);
 
-        return new UserProfileResponse
-        {
-            Id = existingUserProfile.Id,
-            DisplayName = existingUserProfile.DisplayName,
-            Email = existingUserProfile.Email,
-            FirstName = existingUserProfile.FirstName,
-            LastName = existingUserProfile.LastName,
-            AvatarUrl = existingUserProfile.AvatarUrl,
-        };
+        return existingUserProfile.ToResponseModel();
     }
 }

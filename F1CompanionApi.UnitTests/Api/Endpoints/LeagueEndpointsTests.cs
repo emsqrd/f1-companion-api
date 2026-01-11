@@ -30,13 +30,13 @@ public class LeagueEndpointsTests
     public async Task CreateLeagueAsync_ValidRequest_ReturnsCreatedResult()
     {
         // Arrange
-        var userProfile = new UserProfile
+        var userProfile = new UserProfileResponse
         {
             Id = 1,
-            AccountId = "test-account",
             Email = "test@test.com",
             FirstName = "John",
-            LastName = "Doe"
+            LastName = "Doe",
+            CreatedAt = DateTime.UtcNow
         };
 
         var request = new CreateLeagueRequest

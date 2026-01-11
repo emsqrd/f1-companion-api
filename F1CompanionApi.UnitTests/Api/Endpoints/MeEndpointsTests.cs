@@ -57,7 +57,7 @@ public class MeEndpointsTests
 
         _mockUserProfileService
             .Setup(x => x.GetUserProfileByAccountIdAsync(userId))
-            .ReturnsAsync((UserProfile?)null);
+            .ReturnsAsync((UserProfileResponse?)null);
 
         _mockUserProfileService
             .Setup(x => x.CreateUserProfileAsync(userId, userEmail, displayName))
@@ -105,11 +105,11 @@ public class MeEndpointsTests
         var userEmail = "test@test.com";
         var request = new MeEndpoints.RegisterUserRequest("Test User");
 
-        var existingProfile = new UserProfile
+        var existingProfile = new UserProfileResponse
         {
             Id = 1,
-            AccountId = userId,
-            Email = userEmail
+            Email = userEmail,
+            CreatedAt = DateTime.UtcNow
         };
 
         _mockAuthService
@@ -137,12 +137,12 @@ public class MeEndpointsTests
     public async Task UpdateUserProfileAsync_ValidRequest_ReturnsOkWithUpdatedProfile()
     {
         // Arrange
-        var existingProfile = new UserProfile
+        var existingProfile = new UserProfileResponse
         {
             Id = 1,
-            AccountId = "test-account",
             Email = "test@test.com",
-            DisplayName = "Old Name"
+            DisplayName = "Old Name",
+            CreatedAt = DateTime.UtcNow
         };
 
         var updateRequest = new UpdateUserProfileRequest
@@ -159,7 +159,9 @@ public class MeEndpointsTests
             Email = "test@test.com",
             DisplayName = "New Name",
             FirstName = "John",
-            LastName = "Doe"
+            LastName = "Doe",
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
         };
 
         _mockUserProfileService
@@ -191,7 +193,7 @@ public class MeEndpointsTests
 
         _mockUserProfileService
             .Setup(x => x.GetCurrentUserProfileAsync())
-            .ReturnsAsync((UserProfile?)null);
+            .ReturnsAsync((UserProfileResponse?)null);
 
         // Act
         var result = await InvokeUpdateUserProfileAsync(updateRequest);
@@ -206,13 +208,23 @@ public class MeEndpointsTests
     public async Task GetMyLeaguesAsync_UserHasLeagues_ReturnsOkWithLeagues()
     {
         // Arrange
-        var userProfile = new UserProfile
+        var userProfileResponse = new UserProfileResponse
+        {
+            Id = 1,
+            Email = "test@test.com",
+            FirstName = "John",
+            LastName = "Doe",
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var userProfileEntity = new UserProfile
         {
             Id = 1,
             AccountId = "test-account",
             Email = "test@test.com",
             FirstName = "John",
-            LastName = "Doe"
+            LastName = "Doe",
+            CreatedAt = DateTime.UtcNow
         };
 
         var leagues = new List<League>
@@ -222,11 +234,11 @@ public class MeEndpointsTests
                 Id = 1,
                 Name = "League 1",
                 Description = "Description 1",
-                OwnerId = userProfile.Id,
-                Owner = userProfile,
+                OwnerId = userProfileEntity.Id,
+                Owner = userProfileEntity,
                 MaxTeams = 15,
                 IsPrivate = true,
-                CreatedBy = userProfile.Id,
+                CreatedBy = userProfileEntity.Id,
                 CreatedAt = DateTime.UtcNow
             },
             new League
@@ -234,21 +246,21 @@ public class MeEndpointsTests
                 Id = 2,
                 Name = "League 2",
                 Description = "Description 2",
-                OwnerId = userProfile.Id,
-                Owner = userProfile,
+                OwnerId = userProfileEntity.Id,
+                Owner = userProfileEntity,
                 MaxTeams = 20,
                 IsPrivate = false,
-                CreatedBy = userProfile.Id,
+                CreatedBy = userProfileEntity.Id,
                 CreatedAt = DateTime.UtcNow
             }
         };
 
         _mockUserProfileService
             .Setup(x => x.GetRequiredCurrentUserProfileAsync())
-            .ReturnsAsync(userProfile);
+            .ReturnsAsync(userProfileResponse);
 
         _mockLeagueService
-            .Setup(x => x.GetLeaguesByOwnerIdAsync(userProfile.Id))
+            .Setup(x => x.GetLeaguesByOwnerIdAsync(userProfileResponse.Id))
             .ReturnsAsync(leagues);
 
         // Act
@@ -268,13 +280,13 @@ public class MeEndpointsTests
     public async Task GetMyLeaguesAsync_UserHasNoLeagues_ReturnsOkWithEmptyCollection()
     {
         // Arrange
-        var userProfile = new UserProfile
+        var userProfile = new UserProfileResponse
         {
             Id = 1,
-            AccountId = "test-account",
             Email = "test@test.com",
             FirstName = "John",
-            LastName = "Doe"
+            LastName = "Doe",
+            CreatedAt = DateTime.UtcNow
         };
 
         _mockUserProfileService
@@ -316,13 +328,13 @@ public class MeEndpointsTests
     public async Task GetMyTeamAsync_UserHasTeam_ReturnsOkWithTeam()
     {
         // Arrange
-        var user = new UserProfile
+        var user = new UserProfileResponse
         {
             Id = 1,
-            AccountId = "test-account",
             Email = "user@test.com",
             FirstName = "John",
-            LastName = "Doe"
+            LastName = "Doe",
+            CreatedAt = DateTime.UtcNow
         };
 
         var teamResponse = new TeamDetailsResponse
@@ -356,13 +368,13 @@ public class MeEndpointsTests
     public async Task GetMyTeamAsync_UserHasNoTeam_ReturnsOkWithNull()
     {
         // Arrange
-        var user = new UserProfile
+        var user = new UserProfileResponse
         {
             Id = 1,
-            AccountId = "test-account",
             Email = "user@test.com",
             FirstName = "John",
-            LastName = "Doe"
+            LastName = "Doe",
+            CreatedAt = DateTime.UtcNow
         };
 
         _mockUserProfileService

@@ -76,6 +76,7 @@ public class UserProfileServiceTests
             AccountId = TestAccountId,
             Email = TestEmail,
             DisplayName = TestDisplayName,
+            CreatedAt = DateTime.UtcNow,
             Account = account
         };
 
@@ -88,7 +89,7 @@ public class UserProfileServiceTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestAccountId, result.AccountId);
+        Assert.Equal(userProfile.Id, result.Id);
         Assert.Equal(TestEmail, result.Email);
         Assert.Equal(TestDisplayName, result.DisplayName);
     }
@@ -131,6 +132,7 @@ public class UserProfileServiceTests
             AccountId = TestAccountId,
             Email = TestEmail,
             DisplayName = TestDisplayName,
+            CreatedAt = DateTime.UtcNow,
             Account = account
         };
 
@@ -143,7 +145,7 @@ public class UserProfileServiceTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestAccountId, result.AccountId);
+        Assert.Equal(userProfile.Id, result.Id);
         authService.Verify(x => x.GetUserId(), Times.Once);
     }
 
@@ -188,6 +190,7 @@ public class UserProfileServiceTests
             AccountId = TestAccountId,
             Email = TestEmail,
             DisplayName = TestDisplayName,
+            CreatedAt = DateTime.UtcNow,
             Account = account
         };
 
@@ -200,7 +203,7 @@ public class UserProfileServiceTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestAccountId, result.AccountId);
+        Assert.Equal(userProfile.Id, result.Id);
         authService.Verify(x => x.GetRequiredUserId(), Times.Once);
     }
 
@@ -251,6 +254,7 @@ public class UserProfileServiceTests
         );
         Assert.NotNull(savedProfile);
         Assert.Equal(TestEmail, savedProfile.Email);
+        Assert.NotEqual(default, savedProfile.CreatedAt);
     }
 
     [Fact]
@@ -326,6 +330,7 @@ public class UserProfileServiceTests
             FirstName = "Old",
             LastName = "User",
             AvatarUrl = "old-url.jpg",
+            CreatedAt = DateTime.UtcNow,
             Account = account
         };
 
@@ -356,6 +361,7 @@ public class UserProfileServiceTests
         var updatedProfile = await context.UserProfiles.FindAsync(userProfile.Id);
         Assert.Equal("New Name", updatedProfile!.DisplayName);
         Assert.Equal("new@example.com", updatedProfile.Email);
+        Assert.NotNull(updatedProfile.UpdatedAt);
     }
 
     [Fact]
@@ -382,6 +388,7 @@ public class UserProfileServiceTests
             FirstName = "Original",
             LastName = "User",
             AvatarUrl = "original-url.jpg",
+            CreatedAt = DateTime.UtcNow,
             Account = account
         };
 
@@ -452,6 +459,7 @@ public class UserProfileServiceTests
             FirstName = "Existing",
             LastName = "User",
             AvatarUrl = "existing-url.jpg",
+            CreatedAt = DateTime.UtcNow,
             Account = account
         };
 
